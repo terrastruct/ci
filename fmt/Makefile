@@ -17,7 +17,7 @@ gofmt:
 .PHONY: goimports
 goimports: gofmt
 	prefix "$@" xargsd '\.go$$' go run golang.org/x/tools/cmd/goimports@v0.1.12 \
-		-w -local github.com/terrastruct,oss.terrastruct.com
+		-w -local="$$CI_GOIMPORTS_LOCAL"
 
 ifdef CI_FMT_PRETTIER
 all: prettier
