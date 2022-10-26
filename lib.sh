@@ -248,6 +248,10 @@ notify_slack() {
   if [ -z "$CI_MAKE_ROOT" -o -z "${CI:-}" ]; then
     return
   fi
+  if [ -z "$SLACK_WEBHOOK_URL" ]; then
+    # Not all repos need CI failure notifications.
+    return
+  fi
 
   if [ -z "${GITHUB_RUN_ID:-}" ]; then
     # Uncomment and comment return to test notify_slack locally.
