@@ -4,15 +4,17 @@ set -eu
 PATH="$(cd -- "$(dirname "$0")" && pwd)/../bin:$PATH"
 
 set_changed_files
-if search_up go.mod; then
+gomod_path="$(search_up go.mod || true)"
+if [ "$gomod_path" ]; then
   export CI_FMT_GO_MODULE=1
+  module_name="$(cat "$gomod_path" | head -n1 | cut -d' ' -f2 )"
   if [ "${CI_GOIMPORTS_LOCAL:-}" ]; then
-    export CI_GOIMPORTS_LOCAL="$CI_GOIMPORTS_LOCAL,$(go list -m | head -n1)"
+    export CI_GOIMPORTS_LOCAL="$CI_GOIMPORTS_LOCAL,$module_name"
   else
-    export CI_GOIMPORTS_LOCAL="$(go list -m | head -n1)"
+    export CI_GOIMPORTS_LOCAL="$module_name"
   fi
 fi
-if search_up package.json; then
+if search_up package.json > /dev/null; then
   export CI_FMT_NODE_MODULE=1
 fi
 if < "$CHANGED_FILES" grep -qm1 '\.go$'; then

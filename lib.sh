@@ -232,6 +232,7 @@ search_up() {(
   git_root="$(git rev-parse --show-toplevel)"
   while true; do
     if [ -e "$file" ]; then
+      _echo "$file"
       return
     fi
     if [ "$PWD" = "$git_root" ]; then
