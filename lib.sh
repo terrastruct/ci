@@ -287,8 +287,11 @@ notify() {
     status=success
     emoji=🟢
   else
-    status='failure <!here>'
+    status='failure'
     emoji=🛑
+    if [ "${SLACK_WEBHOOK_URL:-}" ]; then
+      status="$status <!here>"
+    fi
   fi
 
   GITHUB_JOB_URL="$(curl -fsSL -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?per_page=100" | \
@@ -308,14 +311,28 @@ notify() {
   commit_title="$(_echo "$commit_title" | sed -e 's/</\&lt;/g' )"
   commit_title="$(_echo "$commit_title" | sed -e 's/>/\&gt;/g' )"
 
-  msg="\`\`\`
-$emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
-   $GITHUB_JOB_URL
-\`\`\`"
+  # Three differences.
+  # 1. @here doesn't work in discord code blocks but do in slack.
+  # 2. URLs don't work in discord code blocks but do in slack.
+  # 3. content vs text for the request JSON payload.
+  # 4. Discord handles spacing in and around code blocks really weirdly. If $GITHUB_JOB_URL
+  #    has a newline between it and the end of the code block, it's rendered as a separate
+  #    paragraph instead of just below the code block.
   if [ "${DISCORD_WEBHOOK_URL:-}" ]; then
+    msg="\`\`\`
+$emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
+\`\`\`$GITHUB_JOB_URL"
+    if [ "$code" -ne 0 ]; then
+      msg="@here
+$msg"
+    fi
     json="{\"content\":$(printf %s "$msg" | jq -sR .)}"
     url="$DISCORD_WEBHOOK_URL"
   elif [ "${SLACK_WEBHOOK_URL:-}" ]; then
+    msg="\`\`\`
+$emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
+   $GITHUB_JOB_URL
+\`\`\`"
     json="{\"text\":$(printf %s "$msg" | jq -sR .)}"
     url="$SLACK_WEBHOOK_URL"
   fi
