@@ -187,6 +187,16 @@ _make() {
   # See tput sgr0 | xxd
   sed -e $'s/\x1b\[[0-9;]*m//g' -e $'s/\x1b(.//g' "$fifo" > "$MAKE_LOG.txt" &
   set +e
+
+  int_trap() {
+    kill -INT -$$
+  }
+  term_trap() {
+    kill -TERM -$$
+  }
+  trap int_trap SIGINT
+  trap term_trap SIGTERM
+
   unbuffer make -sj8 "$@" 2>&1 | tee "$MAKE_LOG" "$fifo"
   code="$?"
   set -e
