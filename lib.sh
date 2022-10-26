@@ -165,39 +165,39 @@ _make() {
       return
     fi
     git submodule update --init --recursive
-    if ! command -v unbuffer > /dev/null; then
-      sh_c hide sudo apt-get update
-      sh_c hide sudo apt-get install -y expect
-    fi
   fi
   if [ -z "${MAKE_LOG:-}" ]; then
     CI_MAKE_ROOT=1
     export MAKE_LOG="./.make-log"
+    fifo="$(mktemp -d)/fifo"
+    mkfifo "$fifo"
+
+    # First regex gets rid of standard xterm escape sequences for controlling
+    # visual attributes.
+    # The second regex I'm not 100% sure, the reference says it selects the US
+    # encoding but I'm not sure why that's necessary or why it always occurs
+    # in tput sgr0 before the standard escape sequence.
+    # See tput sgr0 | xxd
+    <"$fifo" tee "$MAKE_LOG" | sed -e $'s/\x1b\[[0-9;]*m//g' -e $'s/\x1b(.//g' > "$MAKE_LOG.txt" &
+
+    _make_cleanup() {
+      set +e
+      for pid in $(jobs -p); do
+        kill "$pid" 2> /dev/null
+      done
+      wait
+      rm "$fifo"
+    }
+    trap _make_cleanup SIGINT SIGTERM EXIT
+
+    set +e
+    script -q "$fifo" make -sj8 "$@"
   else
-    CI_MAKE_ROOT=
-    export MAKE_LOG="$(mktemp)"
+    CI_MAKE_ROOT=0
+    set +e
+    make -sj8 "$@" 2>&1
   fi
-  fifo="$(mktemp -d)/fifo"
-  mkfifo "$fifo"
-  # First one gets rid of standard xterm escape sequences for controlling
-  # visual attributes.
-  # The second one I'm not 100% sure, the reference says it selects the US
-  # encoding but I'm not sure why that's necessary or why it always occurs
-  # in tput sgr0 before the standard escape sequence.
-  # See tput sgr0 | xxd
-  sed -e $'s/\x1b\[[0-9;]*m//g' -e $'s/\x1b(.//g' "$fifo" > "$MAKE_LOG.txt" &
-  set +e
 
-  int_trap() {
-    kill -INT -$$
-  }
-  term_trap() {
-    kill -TERM -$$
-  }
-  trap int_trap SIGINT
-  trap term_trap SIGTERM
-
-  unbuffer make -sj8 "$@" 2>&1 | tee "$MAKE_LOG" "$fifo"
   code="$?"
   set -e
   if [ "$code" -ne 0 ]; then
@@ -245,7 +245,7 @@ aws() {
 }
 
 notify_slack() {
-  if [ -z "$CI_MAKE_ROOT" -o -z "${CI:-}" ]; then
+  if [ "$CI_MAKE_ROOT" -eq 1 -o -z "${CI:-}" ]; then
     return
   fi
   if [ -z "$SLACK_WEBHOOK_URL" ]; then
