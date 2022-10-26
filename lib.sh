@@ -214,19 +214,22 @@ EOF
   code="$?"
   set -e
   if [ "$code" -ne 0 ]; then
-    notify_slack "$code"
+    notify "$code"
     return "$code"
   fi
   # make doesn't return a nonsuccess exit code on recipe failures.
   if <"$MAKE_LOG" grep -q 'make.* \*\*\* .* Error'; then
-    notify_slack 1
+    notify 1
     return 1
   fi
   if [ -n "${CI:-}" ]; then
     # Make sure nothing has changed
-    git -c color.ui=always diff --exit-code
+    if ! git -c color.ui=always diff --exit-code; then
+      notify 1
+      return 1
+    fi
   fi
-  notify_slack 0
+  notify 0
 }
 
 # ***
@@ -258,23 +261,22 @@ aws() {
   command aws "$@" > /dev/stdout
 }
 
-notify_slack() {
-  if [ "$CI_MAKE_ROOT" -eq 1 -o -z "${CI:-}" ]; then
+notify() {
+  if [ "$CI_MAKE_ROOT" -eq 0 -o -z "${CI:-}" ]; then
     return
   fi
-  if [ -z "$SLACK_WEBHOOK_URL" ]; then
+  if [ -z "${SLACK_WEBHOOK_URL:-}" -a -z "${DISCORD_WEBHOOK_URL:-}" ]; then
     # Not all repos need CI failure notifications.
     return
   fi
 
   if [ -z "${GITHUB_RUN_ID:-}" ]; then
-    # Uncomment and comment return to test notify_slack locally.
-    # GITHUB_WORKFLOW=ci
-    # GITHUB_JOB=fmt
-    # GITHUB_REPOSITORY=terrastruct/src
-    # GITHUB_RUN_ID=3086720699
-    # GITHUB_JOB=all
-    return
+    # For testing.
+    GITHUB_WORKFLOW=ci
+    GITHUB_JOB=fmt
+    GITHUB_REPOSITORY=terrastruct/src
+    GITHUB_RUN_ID=3086720699
+    GITHUB_JOB=all
   elif [ "$GITHUB_REF_PROTECTED" != true ]; then
     # We only want to notify on protected branch failures.
     return
@@ -310,6 +312,12 @@ notify_slack() {
 $emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
    $GITHUB_JOB_URL
 \`\`\`"
-  json="{\"text\":$(printf %s "$msg" | jq -sR .)}"
-  sh_c curl -fsSL -X POST -H 'Content-type: application/json' --data "$json" "$SLACK_WEBHOOK_URL" > /dev/null
+  if [ "${DISCORD_WEBHOOK_URL:-}" ]; then
+    json="{\"content\":$(printf %s "$msg" | jq -sR .)}"
+    url="$DISCORD_WEBHOOK_URL"
+  elif [ "${SLACK_WEBHOOK_URL:-}" ]; then
+    json="{\"text\":$(printf %s "$msg" | jq -sR .)}"
+    url="$SLACK_WEBHOOK_URL"
+  fi
+  sh_c curl -fsSL -X POST -H 'Content-type: application/json' --data "$json" "$url" > /dev/null
 }
