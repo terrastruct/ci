@@ -183,9 +183,15 @@ set_changed_files() {
 # ***
 
 _make() {
-  if [ -n "${CI:-}" ]; then
+  if [ "${CI:-}" ]; then
     if ! is_changed .; then
       return
+    fi
+    if [ "${GITHUB_TOKEN:-}" ]; then
+      git config --global credential.helper store
+      cat > ~/.git-credentials <<EOF
+https://cyborg-ts:$GITHUB_TOKEN@github.com
+EOF
     fi
     git submodule update --init --recursive
   fi
