@@ -19,8 +19,6 @@ if [ -n "$merges" ]; then
   echoerr <<EOF
 Found merge pull request commit(s) in PR: $(_echo "$merges" | tr '\n' ' ')
   Each pull request must be merged separately for CI to run correctly.
-  See wiki docs on the monorepo CI.
-  https://github.com/terrastruct/src/blob/master/wiki/2022/09/monorepo.md
 EOF
   exit 1
 fi
