@@ -7,9 +7,9 @@ set_changed_files
 if search_up go.mod; then
   export CI_FMT_GO_MODULE=1
   if [ "${CI_GOIMPORTS_LOCAL:-}" ]; then
-    export CI_GOIMPORTS_LOCAL="$CI_GOIMPORTS_LOCAL,$(go list -m)"
+    export CI_GOIMPORTS_LOCAL="$CI_GOIMPORTS_LOCAL,$(go list -m | head -n1)"
   else
-    export CI_GOIMPORTS_LOCAL="$(go list -m)"
+    export CI_GOIMPORTS_LOCAL="$(go list -m | head -n1)"
   fi
 fi
 if search_up package.json; then
