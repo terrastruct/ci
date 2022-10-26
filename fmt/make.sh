@@ -19,7 +19,6 @@ if < "$CHANGED_FILES" grep -qm1 '\.go$'; then
 fi
 if < "$CHANGED_FILES" grep -qm1 '\.md$'; then
   if [ -z "${CI:-}" ]; then
-    # See https://github.com/terrastruct/src/pull/1394
     # Only locally for now.
     export CI_FMT_MARKDOWN=1
   fi
