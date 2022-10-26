@@ -80,6 +80,19 @@ stripansi() {
   sed -e $'s/\x1b\[[0-9;]*m//g' -e $'s/\x1b(.//g'
 }
 
+runtty() {
+  case "$(uname)" in
+    Darwin)
+      script -q /dev/null "$@"
+      ;;
+    Linux)
+      script -eqc "$*"
+      ;;
+    *)
+      echoerr "runtty: unsupported OS $(uname)"
+  esac
+}
+
 # ***
 # rand
 # ***
@@ -180,10 +193,10 @@ _make() {
     CI_MAKE_ROOT=1
     export MAKE_LOG="./.make-log"
     set +e
-    # script is necessary to allow make to write its output unbuffered. Otherwise the
+    # runtty is necessary to allow make to write its output unbuffered. Otherwise the
     # output is printed in surges as the write buffer is exceeded rather than a continous
-    # stream. Remove the script prefix to experience the laggy behaviour without it.
-    script -q /dev/null make -sj8 "$@" \
+    # stream. Remove the runtty prefix to experience the laggy behaviour without it.
+    runtty make -sj8 "$@" \
       | tee /dev/stderr "$MAKE_LOG" \
       | stripansi > "$MAKE_LOG.txt"
   else
