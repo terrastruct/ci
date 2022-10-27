@@ -319,13 +319,13 @@ notify() {
   #    has a newline between it and the end of the code block, it's rendered as a separate
   #    paragraph instead of just below the code block.
   if [ "${DISCORD_WEBHOOK_URL:-}" ]; then
-    msg="\`\`\`
+    msg="---"
+    if [ "$code" -ne 0 ]; then
+      msg="$msg @here"
+    fi
+    msg="$msg\`\`\`
 $emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
 \`\`\`$GITHUB_JOB_URL"
-    if [ "$code" -ne 0 ]; then
-      msg="@here
-$msg"
-    fi
     json="{\"content\":$(printf %s "$msg" | jq -sR .)}"
     url="$DISCORD_WEBHOOK_URL"
   elif [ "${SLACK_WEBHOOK_URL:-}" ]; then
