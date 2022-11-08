@@ -12,6 +12,12 @@ _echo() {
   printf '%s\n' "$*"
 }
 
+tput() {
+  if [ -n "$TERM" ]; then
+    command tput "$@"
+  fi
+}
+
 setaf() {
   tput setaf "$1"
   shift
