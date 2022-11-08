@@ -74,3 +74,19 @@ git_describe_ref() {
     git rev-parse --short HEAD
   fi
 }
+
+search_up() {(
+  file="$1"
+  git_root="$(git rev-parse --show-toplevel)"
+  while true; do
+    if [ -e "$file" ]; then
+      _echo "$file"
+      return
+    fi
+    if [ "$PWD" = "$git_root" ]; then
+      break
+    fi
+    cd ..
+  done
+  return 1
+)}

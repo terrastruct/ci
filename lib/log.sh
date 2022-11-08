@@ -127,3 +127,8 @@ runp() {(
   start="$(awk 'BEGIN{srand(); print srand()}')"
   "$@" >"$fifo" 2>&1
 )}
+
+aws() {
+  # Without the redirection aws's cli will write directly to /dev/tty bypassing prefix.
+  command aws "$@" > /dev/stdout
+}
