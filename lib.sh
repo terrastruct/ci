@@ -13,9 +13,6 @@ _echo() {
 }
 
 setaf() {
-  if [ -z "${TERM:-}" ]; then
-    export TERM=xterm-256color
-  fi
   tput setaf "$1"
   shift
   printf '%s' "$*"
