@@ -1,9 +1,5 @@
 #!/bin/sh
 
-if [ "${CI_DEBUG:-}" ]; then
-  set -x
-fi
-
 # ***
 # go related functions
 # ***
