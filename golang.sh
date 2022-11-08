@@ -1,8 +1,9 @@
 #!/bin/sh
 
-# ***
-# go related functions
-# ***
+if [ "${_LIB_GOLANG:-}" ]; then
+  return
+fi
+_LIB_GOLANG=1
 
 goos() {
   case $1 in
