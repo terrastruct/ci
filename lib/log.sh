@@ -5,7 +5,7 @@ if [ "${_LIB_LOG:-}" ]; then
 fi
 _LIB_LOG=1
 
-. "$(dirname "$0")/rand.sh"
+. "$(dirname "$0")/lib/rand.sh"
 
 _echo() {
   printf '%s\n' "$*"
