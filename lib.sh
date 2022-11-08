@@ -368,3 +368,23 @@ $emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
   fi
   sh_c curl -fsSL -X POST -H 'Content-type: application/json' --data "$json" "$url" > /dev/null
 }
+
+# ***
+# job control
+# ***
+
+job_info() {
+  _echo "$JOBS" | grep "$1"
+}
+
+wait_jobs() {
+  JOBS="$(jobs -l)"
+  for pid in $(jobs -p); do
+    if ! wait "$pid"; then
+      echoerr <<EOF
+waiting on $pid failed:
+  $(job_info "$pid")
+EOF
+    fi
+  done
+}
