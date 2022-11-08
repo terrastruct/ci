@@ -23,7 +23,9 @@ fi
 if < "$CHANGED_FILES" grep -qm1 '\.md$'; then
   if [ -z "${CI:-}" ]; then
     # Only locally for now.
-    export CI_FMT_MARKDOWN=1
+    ## Nope, not even locally. Disabled for now as markdown-toc adds a newline on every
+    ## invocation in markdown files with ruby frontmatter.
+    # export CI_FMT_MARKDOWN=1
   fi
 fi
 if < "$CHANGED_FILES" grep -qm1 '\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'; then
