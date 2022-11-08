@@ -34,7 +34,7 @@ echoerr() {
 }
 
 sh_c() {
-  printf '%s %s\n' "$(setaf 3 exec:)" "$*"
+  COLOR=3 echop exec "$*"
   "$@"
 }
 
@@ -43,6 +43,16 @@ get_rand_color() {
   # 1,2 and 9,10 are red and green but we use those for success and failure.
   pick "$*" 3 4 5 6 11 12 13 14
 }
+
+echop() {(
+  prefix="$1"
+  shift
+
+  if [ -z "${COLOR:-}" ]; then
+    COLOR="$(get_rand_color "$prefix")"
+  fi
+  printf '%s: %s\n' "$(setaf "$COLOR" "$prefix")" "$*"
+)}
 
 hide() {
   out="$(mktemp)"

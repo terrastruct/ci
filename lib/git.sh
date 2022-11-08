@@ -90,3 +90,12 @@ search_up() {(
   done
   return 1
 )}
+
+xargsd() {(
+  set_changed_files
+
+  pattern="$1"
+  shift
+
+  < "$CHANGED_FILES" grep "$pattern" | hide xargs ${CI:+-r} -t -P16 "-n${XARGS_N:-256}" -- "$@"
+)}

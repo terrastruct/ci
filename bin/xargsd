@@ -1,10 +1,5 @@
 #!/bin/sh
 set -eu
-. "$(dirname "$0")/../lib.sh"
+. "$(dirname "$0")/../lib/git.sh"
 
-set_changed_files
-
-pattern="$1"
-shift
-
-< "$CHANGED_FILES" grep "$pattern" | hide xargs ${CI:+-r} -t -P16 "-n${XARGS_N:-256}" -- "$@"
+xargsd "$@"
