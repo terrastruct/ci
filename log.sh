@@ -92,7 +92,7 @@ runtty() {
   esac
 }
 
-prefix() {(
+runp() {(
   prefix="$1"
   shift
 
