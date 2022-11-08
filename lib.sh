@@ -208,6 +208,15 @@ set_changed_files() {
   export CHANGED_FILES
 }
 
+git_describe_ref() {
+  TAG="$(git describe 2> /dev/null || true)"
+  if [ -n "$TAG" ]; then
+    _echo "$TAG"
+  else
+    git rev-parse --short HEAD
+  fi
+}
+
 # ***
 # make
 # ***
