@@ -37,7 +37,7 @@ runjob() {
     sed -e "s#^#$prefix: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
     sed -e "s#^#$prefix: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
 
-    trap runjob_exit_trap EXIT
+    trap runjob_exittrap EXIT
     start="$(awk 'BEGIN{srand(); print srand()}')"
     # This runs in a subshell to avoid clobbering stdout and stderr in the exit trap.
     ( "$@" >"$stdout" 2>"$stderr" )
@@ -48,7 +48,7 @@ runjob() {
   fi
 }
 
-runjob_exit_trap() {
+runjob_exittrap() {
   code="$?"
   end="$(awk 'BEGIN{srand(); print srand()}')"
   dur="$((end - start))"
