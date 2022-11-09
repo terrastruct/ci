@@ -62,7 +62,7 @@ runjob_exit_trap() {
 
 waitjobs() {
   JOBS="$(jobs -l)"
-  trap waitjobs_exit_trap EXIT
+  trap waitjobs_sigtrap SIGINT SIGTERM
 
   for pid in $(jobs -p); do
     if ! wait "$pid"; then
@@ -82,9 +82,9 @@ jobinfo() {
   _echo "$JOBS" | grep "$1"
 }
 
-waitjobs_exit_trap() {
+waitjobs_sigtrap() {
   for pid in $(jobs -p); do
-    kill -INT "$pid"
+    kill "$pid" 2> /dev/null || true
   done
   waitjobs
 }
