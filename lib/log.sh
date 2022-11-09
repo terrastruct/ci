@@ -117,7 +117,16 @@ runtty() {
 
 runp() {(
   prefix="$1"
-  shift
+  if [ $# -gt 1 ]; then
+    shift
+  fi
+
+  if [ -n "${RUNP_FILTER-}" ]; then
+    if ! _echo "$prefix" | grep -q "$RUNP_FILTER"; then
+      # Skipped.
+      return 0
+    fi
+  fi
 
   COLOR="$(get_rand_color "$prefix")"
   prefix="$(setaf "$COLOR" "$prefix")"
