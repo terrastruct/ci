@@ -33,6 +33,10 @@ echoerr() {
   fi
 }
 
+printferr() {
+  COLOR=1 printfp err "$@" >&2
+}
+
 sh_c() {
   COLOR=3 echop exec "$*"
   "$@"
@@ -52,6 +56,12 @@ echop() {(
     COLOR="$(get_rand_color "$prefix")"
   fi
   printf '%s: %s\n' "$(setaf "$COLOR" "$prefix")" "$*"
+)}
+
+printfp() {(
+  PREFIX="$1"
+  shift
+  echop "$PREFIX" "$(printf "$@")"
 )}
 
 hide() {
