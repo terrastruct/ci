@@ -54,9 +54,9 @@ runjob_exit_trap() {
   dur="$((end - start))"
 
   if [ "$code" -eq 0 ]; then
-    _echo "$prefix\$:" "$(setaf 2 success)" "($(echo_dur $dur))"
+    _echo "$prefix\$:" "$(setaf 2 success)" "($(echo_dur "$dur"))"
   else
-    _echo "$prefix\$:" "$(setaf 1 failure)" "($(echo_dur $dur))"
+    _echo "$prefix\$:" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
   fi
 }
 
