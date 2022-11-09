@@ -134,11 +134,14 @@ runjob() {(
 
   # We need to make sure we exit with a non zero exit if the command fails.
   # /bin/sh does not support -o pipefail unfortunately.
-  fifo="$(mktemp -d)/fifo"
-  mkfifo "$fifo"
+  stdout="$(mktemp -d)/stdout"
+  stderr="$(mktemp -d)/stderr"
+  mkfifo "$stdout"
+  mkfifo "$stderr"
   # We add the prefix to all lines and remove any warning lines about recursive make.
   # We cannot silence these with -s which is unfortunate.
-  sed -e "s#^#$prefix: #" -e "/make\[.\]: warning: -j/d" "$fifo" &
+  sed -e "s#^#$prefix: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
+  sed -e "s#^#$prefix: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
 
   exit_trap() {
     code="$?"
@@ -154,7 +157,7 @@ runjob() {(
   trap exit_trap EXIT
 
   start="$(awk 'BEGIN{srand(); print srand()}')"
-  "$@" >"$fifo" 2>&1
+  "$@" >"$stdout" 2>"$stderr"
 )}
 
 aws() {
