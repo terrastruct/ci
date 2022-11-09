@@ -139,7 +139,7 @@ waitjobs() {
 
   for pid in $(jobs -p); do
     if ! wait "$pid"; then
-      echoerr <<EOF
+      cat >&2 <<EOF
 waiting on $pid failed:
   $(jobinfo "$pid")
 EOF
@@ -163,7 +163,7 @@ waitjobs_sigtrap() {
 }
 #!/bin/sh
 
-# Always use FLAGSHIFT even if FLAG=''
+# Always shift with FLAGSHIFT even if FLAG='' indicating no more flags.
 flag_parse() {
   case "${1-}" in
     -*=*)
@@ -336,12 +336,7 @@ setaf() {
 }
 
 echoerr() {
-  printf '%s ' "$(setaf 1 err:)" >&2
-  if [ "$#" -gt 0 ]; then
-    printf '%s\n' "$*" >&2
-  else
-    cat >&2
-  fi
+  COLOR=1 echop err "$*" >&2
 }
 
 printferr() {

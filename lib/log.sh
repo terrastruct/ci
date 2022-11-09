@@ -18,12 +18,7 @@ setaf() {
 }
 
 echoerr() {
-  printf '%s ' "$(setaf 1 err:)" >&2
-  if [ "$#" -gt 0 ]; then
-    printf '%s\n' "$*" >&2
-  else
-    cat >&2
-  fi
+  COLOR=1 echop err "$*" >&2
 }
 
 printferr() {
