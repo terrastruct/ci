@@ -5,7 +5,7 @@ if [ "${_LIB_RAND:-}" ]; then
 fi
 _LIB_RAND=1
 
-. "$(dirname "$0")/lib/log.sh"
+. "$(dirname "$0")/log.sh"
 
 rand() {(
   seed="$1"

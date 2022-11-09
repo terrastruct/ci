@@ -5,10 +5,10 @@ if [ "${_LIB:-}" ]; then
 fi
 _LIB=1
 
-. "$(dirname "$0")/lib/rand.sh"
-. "$(dirname "$0")/lib/log.sh"
-. "$(dirname "$0")/lib/git.sh"
-. "$(dirname "$0")/lib/make.sh"
-. "$(dirname "$0")/lib/notify.sh"
-. "$(dirname "$0")/lib/parallel.sh"
-. "$(dirname "$0")/lib/go.sh"
+. "$(dirname "$0")/rand.sh"
+. "$(dirname "$0")/log.sh"
+. "$(dirname "$0")/git.sh"
+. "$(dirname "$0")/make.sh"
+. "$(dirname "$0")/notify.sh"
+. "$(dirname "$0")/parallel.sh"
+. "$(dirname "$0")/go.sh"

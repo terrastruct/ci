@@ -5,7 +5,7 @@ if [ "${_LIB_GIT:-}" ]; then
 fi
 _LIB_GIT=1
 
-. "$(dirname "$0")/lib/log.sh"
+. "$(dirname "$0")/log.sh"
 
 set_git_base() {
   if [ -n "${GIT_BASE_DONE:-}" ]; then

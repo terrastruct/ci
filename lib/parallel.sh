@@ -5,7 +5,7 @@ if [ "${_LIB_PARALLEL:-}" ]; then
 fi
 _LIB_PARALLEL=1
 
-. "$(dirname "$0")/lib/log.sh"
+. "$(dirname "$0")/log.sh"
 
 job_info() {
   _echo "$JOBS" | grep "$1"

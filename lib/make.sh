@@ -5,9 +5,9 @@ if [ "${_LIB_MAKE:-}" ]; then
 fi
 _LIB_MAKE=1
 
-. "$(dirname "$0")/lib/log.sh"
-. "$(dirname "$0")/lib/git.sh"
-. "$(dirname "$0")/lib/notify.sh"
+. "$(dirname "$0")/log.sh"
+. "$(dirname "$0")/git.sh"
+. "$(dirname "$0")/notify.sh"
 
 _make() {
   if [ "${CI:-}" ]; then

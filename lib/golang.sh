@@ -5,7 +5,7 @@ if [ "${_LIB_GOLANG:-}" ]; then
 fi
 _LIB_GOLANG=1
 
-. "$(dirname "$0")/lib/log.sh"
+. "$(dirname "$0")/log.sh"
 
 goos() {
   case $1 in
