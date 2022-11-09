@@ -7,10 +7,6 @@ _LIB_PARALLEL=1
 
 . "$(dirname "$0")/log.sh"
 
-job_info() {
-  _echo "$JOBS" | grep "$1"
-}
-
 wait_jobs() {
   JOBS="$(jobs -l)"
   for pid in $(jobs -p); do
@@ -19,6 +15,14 @@ wait_jobs() {
 waiting on $pid failed:
   $(job_info "$pid")
 EOF
+      FAILURE=1
     fi
   done
+  if [ -n "${FAILURE-}" ]; then
+    exit 1
+  fi
+}
+
+job_info() {
+  _echo "$JOBS" | grep "$1"
 }
