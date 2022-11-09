@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Always use FLAGSHIFT even if FLAG=''
+# Always shift with FLAGSHIFT even if FLAG='' indicating no more flags.
 flag_parse() {
   case "${1-}" in
     -*=*)
