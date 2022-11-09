@@ -70,7 +70,7 @@ hide() {
   "$@" >"$out" 2>&1
   code="$?"
   set -e
-  if [ "$code" -eq 0 -a -z "${CI_DEBUG:-}" ]; then
+  if [ "$code" -eq 0 ]; then
     return
   fi
   cat "$out" >&2
