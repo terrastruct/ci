@@ -1,12 +1,5 @@
 #!/bin/sh
 
-if [ "${_LIB_GOLANG:-}" ]; then
-  return
-fi
-_LIB_GOLANG=1
-
-. "$(dirname "$0")/log.sh"
-
 goos() {
   case $1 in
     macos) _echo darwin ;;

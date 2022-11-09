@@ -1,5 +1,5 @@
 #!/bin/sh
 set -eu
-. "$(dirname "$0")/../lib/parallel.sh"
+. "$(dirname "$0")/../lib.sh"
 
-runp "$@"
+runjob "$@"

@@ -1,12 +1,5 @@
 #!/bin/sh
 
-if [ "${_LIB_NOTIFY:-}" ]; then
-  return
-fi
-_LIB_NOTIFY=1
-
-. "$(dirname "$0")/log.sh"
-
 notify() {
   if [ "$CI_MAKE_ROOT" -eq 0 -o -z "${CI:-}" ]; then
     return

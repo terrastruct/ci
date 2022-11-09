@@ -1,14 +1,5 @@
 #!/bin/sh
 
-if [ "${_LIB_MAKE:-}" ]; then
-  return
-fi
-_LIB_MAKE=1
-
-. "$(dirname "$0")/log.sh"
-. "$(dirname "$0")/git.sh"
-. "$(dirname "$0")/notify.sh"
-
 _make() {
   if [ "${CI:-}" ]; then
     if ! is_changed .; then

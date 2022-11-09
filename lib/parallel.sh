@@ -1,12 +1,9 @@
 #!/bin/sh
 
-if [ "${_LIB_PARALLEL:-}" ]; then
-  return
-fi
-_LIB_PARALLEL=1
-
-. "$(dirname "$0")/log.sh"
-
+# Unfortunately this leaks subprocesses when killed via a signal. Not sure how to remedy.
+# I believe the code is 100% correct. Shell's seem quite buggy in their handling and
+# propogating of signals. Not sure how to debug even without something like gdb and going
+# through the source code of the shell too.
 runjob() {
   prefix="$1"
   if [ $# -gt 1 ]; then

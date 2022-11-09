@@ -1,10 +1,5 @@
 #!/bin/sh
 
-if [ "${_LIB_TEST:-}" ]; then
-  return 0
-fi
-_LIB_TEST=1
-
 assert() {
   if [ $# -gt 2 ]; then
     _ASSERT_EXP="$3"

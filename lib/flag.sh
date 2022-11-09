@@ -1,12 +1,5 @@
 #!/bin/sh
 
-if [ "${_LIB_FLAG:-}" ]; then
-  return 0
-fi
-_LIB_FLAG=1
-
-. "$(dirname "$0")/log.sh"
-
 # Always use FLAGSHIFT even if FLAG=''
 flag_parse() {
   case "${1-}" in

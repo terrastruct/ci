@@ -1,12 +1,5 @@
 #!/bin/sh
 
-if [ "${_LIB_RAND:-}" ]; then
-  return
-fi
-_LIB_RAND=1
-
-. "$(dirname "$0")/log.sh"
-
 rand() {(
   seed="$1"
   range="$2"

@@ -1,12 +1,5 @@
 #!/bin/sh
 
-if [ "${_LIB_LOG:-}" ]; then
-  return
-fi
-_LIB_LOG=1
-
-. "$(dirname "$0")/rand.sh"
-
 _echo() {
   printf '%s\n' "$*"
 }
