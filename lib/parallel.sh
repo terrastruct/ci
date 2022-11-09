@@ -7,27 +7,7 @@ _LIB_PARALLEL=1
 
 . "$(dirname "$0")/log.sh"
 
-wait_jobs() {
-  JOBS="$(jobs -l)"
-  for pid in $(jobs -p); do
-    if ! wait "$pid"; then
-      echoerr <<EOF
-waiting on $pid failed:
-  $(job_info "$pid")
-EOF
-      FAILURE=1
-    fi
-  done
-  if [ -n "${FAILURE-}" ]; then
-    exit 1
-  fi
-}
-
-job_info() {
-  _echo "$JOBS" | grep "$1"
-}
-
-runjob() {(
+runjob() {
   prefix="$1"
   if [ $# -gt 1 ]; then
     shift
@@ -50,24 +30,61 @@ runjob() {(
   stderr="$(mktemp -d)/stderr"
   mkfifo "$stdout"
   mkfifo "$stderr"
-  # We add the prefix to all lines and remove any warning lines about recursive make.
-  # We cannot silence these with -s which is unfortunate.
-  sed -e "s#^#$prefix: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
-  sed -e "s#^#$prefix: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
 
-  exit_trap() {
-    code="$?"
-    end="$(awk 'BEGIN{srand(); print srand()}')"
-    dur="$((end - start))"
+  (
+    # We add the prefix to all lines and remove any warning lines about recursive make.
+    # We cannot silence these with -s which is unfortunate.
+    sed -e "s#^#$prefix: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
+    sed -e "s#^#$prefix: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
 
-    if [ "$code" -eq 0 ]; then
-      _echo "$prefix\$:" "$(setaf 2 success)" "($(echo_dur $dur))"
-    else
-      _echo "$prefix\$:" "$(setaf 1 failure)" "($(echo_dur $dur))"
+    trap runjob_exit_trap EXIT
+    start="$(awk 'BEGIN{srand(); print srand()}')"
+    # This runs in a subshell to avoid clobbering stdout and stderr in the exit trap.
+    ( "$@" >"$stdout" 2>"$stderr" )
+  ) &
+
+  if [ -n "${MAKE_LOG:-}" ]; then
+    waitjobs
+  fi
+}
+
+runjob_exit_trap() {
+  code="$?"
+  end="$(awk 'BEGIN{srand(); print srand()}')"
+  dur="$((end - start))"
+
+  if [ "$code" -eq 0 ]; then
+    _echo "$prefix\$:" "$(setaf 2 success)" "($(echo_dur $dur))"
+  else
+    _echo "$prefix\$:" "$(setaf 1 failure)" "($(echo_dur $dur))"
+  fi
+}
+
+waitjobs() {
+  JOBS="$(jobs -l)"
+  trap waitjobs_exit_trap EXIT
+
+  for pid in $(jobs -p); do
+    if ! wait "$pid"; then
+      echoerr <<EOF
+waiting on $pid failed:
+  $(jobinfo "$pid")
+EOF
+      FAILURE=1
     fi
-  }
-  trap exit_trap EXIT
+  done
+  if [ -n "${FAILURE-}" ]; then
+    exit 1
+  fi
+}
 
-  start="$(awk 'BEGIN{srand(); print srand()}')"
-  "$@" >"$stdout" 2>"$stderr"
-)}
+jobinfo() {
+  _echo "$JOBS" | grep "$1"
+}
+
+waitjobs_exit_trap() {
+  for pid in $(jobs -p); do
+    kill -INT "$pid"
+  done
+  waitjobs
+}
