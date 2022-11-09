@@ -115,14 +115,14 @@ runtty() {
   esac
 }
 
-runp() {(
+runjob() {(
   prefix="$1"
   if [ $# -gt 1 ]; then
     shift
   fi
 
-  if [ -n "${RUNP_FILTER-}" ]; then
-    if ! _echo "$prefix" | grep -q "$RUNP_FILTER"; then
+  if [ -n "${JOB_FILTER-}" ]; then
+    if ! _echo "$prefix" | grep -q "$JOB_FILTER"; then
       # Skipped.
       return 0
     fi

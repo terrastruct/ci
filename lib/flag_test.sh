@@ -77,10 +77,9 @@ case_five() {
   assert flag_req_arg_err "$(TERM= flag_req_arg_err 2>&1)" "err: flag --meow requires an argument, run with --help to see full usage"
 }
 
-
-runp case_one &
-runp case_two &
-runp case_three &
-runp case_four &
-runp case_five &
+runjob case_one &
+runjob case_two &
+runjob case_three &
+runjob case_four &
+runjob case_five &
 wait_jobs
