@@ -367,15 +367,32 @@ printfp() {
   fi
 }
 
+catp() {
+  prefix="$1"
+  printfp "$prefix"
+  read -r line
+  _echo "$line"
+
+  indent=$(repeat ' ' $(( $(strlen "$prefix") + 2 )))
+  sed "s/^/$indent/"
+}
+
+repeat() {
+  char="$1"
+  times="$2"
+  seq -s "$char" "$times" | tr -d '[:digit:]'
+}
+
+strlen() {
+  printf %s "$1" | wc -c
+}
+
 echoerr() {
   COLOR=1 echop err "$*" >&2
 }
 
 caterr() {
-  COLOR=1 printfp err >&2
-  read -r line
-  _echo "$line"
-  sed 's/^/     /' >&2
+  COLOR=1 catp err "$@" >&2
 }
 
 printferr() {
