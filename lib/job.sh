@@ -93,7 +93,7 @@ waitjobs_sigtrap() {
   waitjobs
 }
 
-job_flag_parses() {
+job_parseflags() {
   while :; do
     flag_parse "$@"
     shift "$FLAGSHIFT"
@@ -107,14 +107,12 @@ exit 0
 ;;
       "") break ;;
       *)
-        echoerr "unrecognized flag $FLAG, run with --help to see usage"
-        return 1
+        flag_errusage "unrecognized flag $RAWFLAG"
         ;;
     esac
   done
 
   if [ $# -gt 0 ]; then
-    echoerr "$0 does not accept any arguments, run with --help to see usage"
-    return 1
+    flag_errusage "$0 does not accept any arguments"
   fi
 }

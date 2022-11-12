@@ -29,7 +29,7 @@ EOF
   assert got "$exp"
 }
 
-job_flag_parses "$@"
+job_parseflags "$@"
 runjob case1
 runjob case2
 waitjobs

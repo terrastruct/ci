@@ -70,11 +70,13 @@ case4() {
 }
 
 case5() {
-  FLAG=m
-  assert flag_assert_arg "$(TERM= flag_assert_arg 2>&1)" "err: flag -m requires an argument, run with --help to see full usage"
+  FLAGRAW=-m
+  assert flag_assertarg "$(TERM= flag_assertarg 2>&1)" "err: flag -m requires an argument
+     Run with --help for usage."
 
-  FLAG=meow
-  assert flag_assert_arg "$(TERM= flag_assert_arg 2>&1)" "err: flag --meow requires an argument, run with --help to see full usage"
+  FLAGRAW=--meow
+  assert flag_assertarg "$(TERM= flag_assertarg 2>&1)" "err: flag --meow requires an argument
+     Run with --help for usage."
 }
 
 case6() {
@@ -88,7 +90,7 @@ case6() {
   assert @ "$*" '--long'
 }
 
-job_flag_parses "$@"
+job_parseflags "$@"
 runjob case1
 runjob case2
 runjob case3

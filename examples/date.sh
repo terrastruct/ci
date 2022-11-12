@@ -52,17 +52,17 @@ EOF
       fi
       ;;
     s|short)
-      flag_no_arg
+      flag_noarg
       DATE_FORMAT="%Y-%m-%d"
       shift "$FLAGSHIFT"
       ;;
     l|long)
-      flag_no_arg
+      flag_noarg
       DATE_FORMAT="%A %B %d %Y %Z"
       shift "$FLAGSHIFT"
       ;;
     format)
-      flag_assert_arg
+      flag_assertarg
       DATE_FORMAT="$FLAGARG"
       shift "$FLAGSHIFT"
       ;;
@@ -70,8 +70,7 @@ EOF
       shift "$FLAGSHIFT"
       break ;;
     *)
-      echoerr "unrecognized flag $FLAG, run with --help to see usage"
-      exit 1
+      flag_errusage "unrecognized flag $FLAGRAW"
       ;;
   esac
 done

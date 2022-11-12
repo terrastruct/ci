@@ -13,13 +13,14 @@ LIB_FLAG=1
 # - Always shift with FLAGSHIFT even if FLAG='' indicates no more flags.
 # - If the flag has no argument, remember to add back FLAGARG into $@
 #   and shift one less than FLAGSHIFT.
-# - If a flag always requires an argument, use flag_assert_arg.
-# - If a flag does not require an argument, use flag_no_arg.
+# - If a flag always requires an argument, use flag_assertarg.
+# - If a flag does not require an argument, use flag_noarg.
 flag_parse() {
   case "${1-}" in
     -*=*)
       # Remove everything after first equal sign.
       FLAG="${1%%=*}"
+      FLAGRAW="$FLAG"
       # Remove leading hyphens.
       FLAG="${FLAG#-}"; FLAG="${FLAG#-}"
       # Remove everything before first equal sign.
@@ -28,17 +29,20 @@ flag_parse() {
       ;;
     -)
       FLAG=
+      FLAGRAW=
       FLAGARG=
       FLAGSHIFT=0
       ;;
     --)
       FLAG=
+      FLAGRAW=
       FLAGARG=
       FLAGSHIFT=1
       ;;
     -*)
       # Remove leading hyphens.
       FLAG="${1#-}"; FLAG="${FLAG#-}"
+      FLAGRAW=$1
       FLAGARG=
       FLAGSHIFT=1
       if [ $# -gt 1 ]; then
@@ -58,6 +62,7 @@ flag_parse() {
       ;;
     *)
       FLAG=
+      FLAGRAW=
       FLAGARG=
       FLAGSHIFT=0
       ;;
@@ -65,23 +70,22 @@ flag_parse() {
   return 0
 }
 
-flag_assert_arg() {
+flag_assertarg() {
   if [ -z "$FLAGARG" ]; then
-    echoerr "flag $(_flag_fmt) requires an argument, run with --help to see full usage"
-    return 1
+    flag_errusage "flag $FLAGRAW requires an argument"
   fi
 }
 
-flag_no_arg() {
+flag_noarg() {
   if [ "$FLAGSHIFT" -eq 2 ]; then
     FLAGSHIFT=1
   fi
 }
 
-_flag_fmt() {
-  if [ "$(printf %s "$FLAG" | wc -c)" -eq 1 ]; then
-    _echo "-$FLAG"
-  else
-    _echo "--$FLAG"
-  fi
+flag_errusage() {
+  caterr <<EOF
+$1
+Run with --help for usage.
+EOF
+  return 1
 }
