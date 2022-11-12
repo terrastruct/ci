@@ -1,5 +1,7 @@
 # ci
 
+[![ci](https://github.com/terrastruct/ci/actions/workflows/ci.yml/badge.svg)](https://github.com/terrastruct/ci/actions/workflows/ci.yml)
+
 Terrastruct's CI scripts.
 
 Currently used by:

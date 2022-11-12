@@ -1,0 +1,22 @@
+name: ci
+on: [push]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  assert_linear:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: TERM=xterm-256color ./assert_linear.sh
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: TERM=xterm-256color ./ci/test.sh
+  gen_lib:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: TERM=xterm-256color ./ci/gen_lib.sh
