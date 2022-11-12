@@ -16,7 +16,7 @@ merge_base="$(git merge-base HEAD origin/master)"
 merges="$(git --no-pager log --merges --grep="Merge pull request" --grep="\[ci-base\]" --format=%h "$merge_base"..HEAD)"
 
 if [ -n "$merges" ]; then
-  cat >&2 <<EOF
+  caterr <<EOF
 Found merge pull request commit(s) in PR: $(_echo "$merges" | tr '\n' ' ')
   Each pull request must be merged separately for CI to run correctly.
 EOF

@@ -139,7 +139,7 @@ waitjobs() {
 
   for pid in $(jobs -p); do
     if ! wait "$pid"; then
-      cat >&2 <<EOF
+      caterr <<EOF
 waiting on $pid failed:
   $(jobinfo "$pid")
 EOF
@@ -318,10 +318,6 @@ xargsd() {(
 )}
 #!/bin/sh
 
-_echo() {
-  printf '%s\n' "$*"
-}
-
 tput() {
   if [ -n "$TERM" ]; then
     command tput "$@"
@@ -335,17 +331,8 @@ setaf() {
   tput sgr0
 }
 
-echoerr() {
-  COLOR=1 echop err "$*" >&2
-}
-
-printferr() {
-  COLOR=1 printfp err "$@" >&2
-}
-
-sh_c() {
-  COLOR=3 echop exec "$*"
-  "$@"
+_echo() {
+  printf '%s\n' "$*"
 }
 
 get_rand_color() {
@@ -358,17 +345,36 @@ echop() {(
   prefix="$1"
   shift
 
-  if [ -z "${COLOR:-}" ]; then
-    COLOR="$(get_rand_color "$prefix")"
-  fi
-  printf '%s: %s\n' "$(setaf "$COLOR" "$prefix")" "$*"
+  printfp "$prefix" "%s\n" "$*"
 )}
 
 printfp() {(
-  PREFIX="$1"
+  prefix="$1"
   shift
-  echop "$PREFIX" "$(printf "$@")"
+
+  if [ -z "${COLOR:-}" ]; then
+    COLOR="$(get_rand_color "$prefix")"
+  fi
+  printf '%s: %s' "$(setaf "$COLOR" "$prefix")" "$(printf "$@")"
 )}
+
+echoerr() {
+  COLOR=1 echop err "$*" >&2
+}
+
+caterr() {
+  COLOR=1 echop err >&2
+  cat >&2
+}
+
+printferr() {
+  COLOR=1 printfp err "$@" >&2
+}
+
+sh_c() {
+  COLOR=3 echop exec "$*"
+  "$@"
+}
 
 hide() {
   out="$(mktemp)"

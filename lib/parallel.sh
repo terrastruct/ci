@@ -63,7 +63,7 @@ waitjobs() {
 
   for pid in $(jobs -p); do
     if ! wait "$pid"; then
-      cat >&2 <<EOF
+      caterr <<EOF
 waiting on $pid failed:
   $(jobinfo "$pid")
 EOF
