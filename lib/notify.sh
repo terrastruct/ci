@@ -1,4 +1,9 @@
 #!/bin/sh
+if [ "${LIB_NOTIFY-}" ]; then
+  return 0
+fi
+LIB_NOTIFY=1
+. ./log.sh
 
 notify() {
   if [ "$CI_MAKE_ROOT" -eq 0 -o -z "${CI:-}" ]; then

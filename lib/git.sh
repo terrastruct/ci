@@ -1,4 +1,9 @@
 #!/bin/sh
+if [ "${LIB_GIT-}" ]; then
+  return 0
+fi
+LIB_GIT=1
+. ./log.sh
 
 set_git_base() {
   if [ -n "${GIT_BASE_DONE:-}" ]; then
@@ -39,14 +44,6 @@ is_changed() {
 set_changed_files() {
   set_git_base
 
-  filter_exists() {
-    while read -r p; do
-      if [ -e "$p" ]; then
-        printf '%s\n' "$p"
-      fi
-    done
-  }
-
   if [ -n "${CHANGED_FILES:-}" ]; then
     return
   fi
@@ -61,6 +58,18 @@ set_changed_files() {
   export CHANGED_FILES
 }
 
+git_assert_clean() {
+  git ${TERM:+-c color.diff=always} diff --exit-code
+}
+
+filter_exists() {
+  while read -r p; do
+    if [ -e "$p" ]; then
+      printf '%s\n' "$p"
+    fi
+  done
+}
+
 git_describe_ref() {
   TAG="$(git describe 2> /dev/null || true)"
   if [ -n "$TAG" ]; then
@@ -70,7 +79,7 @@ git_describe_ref() {
   fi
 }
 
-search_up() {(
+search_up() {
   file="$1"
   git_root="$(git rev-parse --show-toplevel)"
   while true; do
@@ -84,13 +93,13 @@ search_up() {(
     cd ..
   done
   return 1
-)}
+}
 
-xargsd() {(
+xargsd() {
   set_changed_files
 
   pattern="$1"
   shift
 
   < "$CHANGED_FILES" grep "$pattern" | hide xargs ${CI:+-r} -t -P16 "-n${XARGS_N:-256}" -- "$@"
-)}
+}

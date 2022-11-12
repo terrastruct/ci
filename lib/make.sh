@@ -1,4 +1,10 @@
 #!/bin/sh
+if [ "${LIB_MAKE-}" ]; then
+  return 0
+fi
+LIB_MAKE=1
+. ./log.sh
+. ./git.sh
 
 _make() {
   if [ "${CI:-}" ]; then
@@ -42,7 +48,7 @@ EOF
   fi
   if [ -n "${CI:-}" ]; then
     # Make sure nothing has changed
-    if ! git -c color.ui=always diff --exit-code; then
+    if ! git_assert_clean; then
       notify 1
       return 1
     fi

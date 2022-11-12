@@ -1,24 +1,24 @@
 #!/bin/sh
 set -eu
+cd -- "$(dirname "$0")"
+. ./flag.sh
+. ./test.sh
+cd - >/dev/null
 
-. "$(dirname "$0")/flag.sh"
-. "$(dirname "$0")/test.sh"
-. "$(dirname "$0")/parallel.sh"
-
-case_one() {
+case1() {
   set -- -ok=meow --ok=meow -
 
-  flag_parse "$@"
+  parseflag "$@"
   assert FLAG ok
   assert FLAGARG meow
   shift "$FLAGSHIFT"
 
-  flag_parse "$@"
+  parseflag "$@"
   assert FLAG ok
   assert FLAGARG meow
   shift "$FLAGSHIFT"
 
-  flag_parse "$@"
+  parseflag "$@"
   assert FLAG ''
   assert FLAGARG ''
   shift "$FLAGSHIFT"
@@ -26,20 +26,20 @@ case_one() {
   assert @ "$*" '-'
 }
 
-case_two() {
+case2() {
   set -- -m ok --coola joola --
 
-  flag_parse "$@"
+  parseflag "$@"
   assert FLAG m
   assert FLAGARG ok
   shift "$FLAGSHIFT"
 
-  flag_parse "$@"
+  parseflag "$@"
   assert FLAG coola
   assert FLAGARG joola
   shift "$FLAGSHIFT"
 
-  flag_parse "$@"
+  parseflag "$@"
   assert FLAG ''
   assert FLAGARG ''
   shift "$FLAGSHIFT"
@@ -47,10 +47,10 @@ case_two() {
   assert @ "$*" ''
 }
 
-case_three() {
+case3() {
   set -- -m -- - wow lol more args
 
-  flag_parse "$@"
+  parseflag "$@"
   assert FLAG m
   assert FLAGARG ''
   shift "$FLAGSHIFT"
@@ -58,10 +58,10 @@ case_three() {
   assert @ "$*" '- wow lol more args'
 }
 
-case_four() {
+case4() {
   set -- -some -
 
-  flag_parse "$@"
+  parseflag "$@"
   assert FLAG some
   assert FLAGARG -
   shift "$FLAGSHIFT"
@@ -69,7 +69,7 @@ case_four() {
   assert @ "$*" ''
 }
 
-case_five() {
+case5() {
   FLAG=m
   assert flag_req_arg_err "$(TERM= flag_req_arg_err 2>&1)" "err: flag -m requires an argument, run with --help to see full usage"
 
@@ -77,9 +77,10 @@ case_five() {
   assert flag_req_arg_err "$(TERM= flag_req_arg_err 2>&1)" "err: flag --meow requires an argument, run with --help to see full usage"
 }
 
-runjob case_one
-runjob case_two
-runjob case_three
-runjob case_four
-runjob case_five
+job_parseflags "$@"
+runjob case1
+runjob case2
+runjob case3
+runjob case4
+runjob case5
 waitjobs

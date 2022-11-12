@@ -1,21 +1,29 @@
 #!/bin/sh
+if [ "${LIB_RAND-}" ]; then
+  return 0
+fi
+LIB_RAND=1
 
-rand() {(
+rand() {
   seed="$1"
   range="$2"
 
   seed_file="$(mktemp)"
   _echo "$seed" | md5sum > "$seed_file"
   shuf -i "$range" -n 1 --random-source="$seed_file"
-)}
+}
 
-pick() {(
+pick() {
   seed="$1"
   shift
   i="$(rand "$seed" "1-$#")"
-  eval "_echo \$$i"
-)}
+  eval "_echo \"\$$i\""
+}
 #!/bin/sh
+if [ "${LIB_GOLANG-}" ]; then
+  return 0
+fi
+LIB_GOLANG=1
 
 goos() {
   case $1 in
@@ -24,6 +32,10 @@ goos() {
   esac
 }
 #!/bin/sh
+if [ "${LIB_MAKE-}" ]; then
+  return 0
+fi
+LIB_MAKE=1
 
 _make() {
   if [ "${CI:-}" ]; then
@@ -67,7 +79,7 @@ EOF
   fi
   if [ -n "${CI:-}" ]; then
     # Make sure nothing has changed
-    if ! git -c color.ui=always diff --exit-code; then
+    if ! git_assert_clean; then
       notify 1
       return 1
     fi
@@ -75,96 +87,13 @@ EOF
   notify 0
 }
 #!/bin/sh
-
-# Unfortunately this leaks subprocesses when killed via a signal. Not sure how to remedy.
-# I believe the code is 100% correct. Shell's seem quite buggy in their handling and
-# propogating of signals. Not sure how to debug even without something like gdb and going
-# through the source code of the shell too.
-runjob() {
-  prefix="$1"
-  if [ $# -gt 1 ]; then
-    shift
-  fi
-
-  if [ -n "${JOB_FILTER-}" ]; then
-    if ! _echo "$prefix" | grep -q "$JOB_FILTER"; then
-      # Skipped.
-      return 0
-    fi
-  fi
-
-  COLOR="$(get_rand_color "$prefix")"
-  prefix="$(setaf "$COLOR" "$prefix")"
-  _echo "$prefix^:" "$*"
-
-  # We need to make sure we exit with a non zero exit if the command fails.
-  # /bin/sh does not support -o pipefail unfortunately.
-  stdout="$(mktemp -d)/stdout"
-  stderr="$(mktemp -d)/stderr"
-  mkfifo "$stdout"
-  mkfifo "$stderr"
-
-  (
-    # We add the prefix to all lines and remove any warning lines about recursive make.
-    # We cannot silence these with -s which is unfortunate.
-    sed -e "s#^#$prefix: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
-    sed -e "s#^#$prefix: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
-
-    trap runjob_exittrap EXIT
-    start="$(awk 'BEGIN{srand(); print srand()}')"
-    # This runs in a subshell to avoid clobbering stdout and stderr in the exit trap.
-    ( "$@" >"$stdout" 2>"$stderr" )
-  ) &
-
-  if [ -n "${MAKE_LOG:-}" ]; then
-    waitjobs
-  fi
-}
-
-runjob_exittrap() {
-  code="$?"
-  end="$(awk 'BEGIN{srand(); print srand()}')"
-  dur="$((end - start))"
-
-  if [ "$code" -eq 0 ]; then
-    _echo "$prefix\$:" "$(setaf 2 success)" "($(echo_dur "$dur"))"
-  else
-    _echo "$prefix\$:" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
-  fi
-}
-
-waitjobs() {
-  JOBS="$(jobs -l)"
-  trap waitjobs_sigtrap SIGINT SIGTERM
-
-  for pid in $(jobs -p); do
-    if ! wait "$pid"; then
-      caterr <<EOF
-waiting on $pid failed:
-  $(jobinfo "$pid")
-EOF
-      FAILURE=1
-    fi
-  done
-  if [ -n "${FAILURE-}" ]; then
-    exit 1
-  fi
-}
-
-jobinfo() {
-  _echo "$JOBS" | grep "$1"
-}
-
-waitjobs_sigtrap() {
-  for pid in $(jobs -p); do
-    kill "$pid" 2> /dev/null || true
-  done
-  waitjobs
-}
-#!/bin/sh
+if [ "${LIB_FLAG-}" ]; then
+  return 0
+fi
+LIB_FLAG=1
 
 # Always shift with FLAGSHIFT even if FLAG='' indicating no more flags.
-flag_parse() {
+parseflag() {
   case "${1-}" in
     -*=*)
       # Remove everything after first equal sign.
@@ -191,12 +120,16 @@ flag_parse() {
     -*)
       # Remove leading hyphens.
       FLAG="${1#-}"; FLAG="${FLAG#-}"
-      if [ "${2-}" = -- ] ; then
-        FLAGARG=
-      else
-        FLAGARG="${2-}"
+      FLAGARG=
+      FLAGSHIFT=1
+      if [ $# -gt 1 ]; then
+        FLAGSHIFT=2
+        if [ "$2" = -- ] ; then
+          FLAGARG=
+        else
+          FLAGARG="$2"
+        fi
       fi
-      FLAGSHIFT=2
       return 0
       ;;
     *)
@@ -221,6 +154,10 @@ _flag_fmt() {
   fi
 }
 #!/bin/sh
+if [ "${LIB_GIT-}" ]; then
+  return 0
+fi
+LIB_GIT=1
 
 set_git_base() {
   if [ -n "${GIT_BASE_DONE:-}" ]; then
@@ -261,14 +198,6 @@ is_changed() {
 set_changed_files() {
   set_git_base
 
-  filter_exists() {
-    while read -r p; do
-      if [ -e "$p" ]; then
-        printf '%s\n' "$p"
-      fi
-    done
-  }
-
   if [ -n "${CHANGED_FILES:-}" ]; then
     return
   fi
@@ -283,6 +212,18 @@ set_changed_files() {
   export CHANGED_FILES
 }
 
+git_assert_clean() {
+  git ${TERM:+-c color.diff=always} diff --exit-code
+}
+
+filter_exists() {
+  while read -r p; do
+    if [ -e "$p" ]; then
+      printf '%s\n' "$p"
+    fi
+  done
+}
+
 git_describe_ref() {
   TAG="$(git describe 2> /dev/null || true)"
   if [ -n "$TAG" ]; then
@@ -292,7 +233,7 @@ git_describe_ref() {
   fi
 }
 
-search_up() {(
+search_up() {
   file="$1"
   git_root="$(git rev-parse --show-toplevel)"
   while true; do
@@ -306,17 +247,21 @@ search_up() {(
     cd ..
   done
   return 1
-)}
+}
 
-xargsd() {(
+xargsd() {
   set_changed_files
 
   pattern="$1"
   shift
 
   < "$CHANGED_FILES" grep "$pattern" | hide xargs ${CI:+-r} -t -P16 "-n${XARGS_N:-256}" -- "$@"
-)}
+}
 #!/bin/sh
+if [ "${LIB_LOG-}" ]; then
+  return 0
+fi
+LIB_LOG=1
 
 tput() {
   if [ -n "$TERM" ]; then
@@ -341,29 +286,33 @@ get_rand_color() {
   pick "$*" 3 4 5 6 11 12 13 14
 }
 
-echop() {(
+echop() {
   prefix="$1"
   shift
 
   printfp "$prefix" "%s\n" "$*"
-)}
+}
 
-printfp() {(
+printfp() {
   prefix="$1"
   shift
 
   if [ -z "${COLOR:-}" ]; then
     COLOR="$(get_rand_color "$prefix")"
   fi
-  printf '%s: %s' "$(setaf "$COLOR" "$prefix")" "$(printf "$@")"
-)}
+  printf '%s: ' "$(setaf "$COLOR" "$prefix")"
+
+  if [ $# -gt 0 ]; then
+    printf "$@"
+  fi
+}
 
 echoerr() {
   COLOR=1 echop err "$*" >&2
 }
 
 caterr() {
-  COLOR=1 echop err >&2
+  COLOR=1 printfp err >&2
   cat >&2
 }
 
@@ -432,21 +381,170 @@ aws() {
   command aws "$@" > /dev/stdout
 }
 #!/bin/sh
+if [ "${LIB_JOB-}" ]; then
+  return 0
+fi
+LIB_JOB=1
 
-assert() {
-  if [ $# -gt 2 ]; then
-    _ASSERT_EXP="$3"
-    _ASSERT_GOT="$2"
-  else
-    eval "_ASSERT_GOT=\$$1"
-    _ASSERT_EXP="$2"
+# Unfortunately this leaks subprocesses when killed via a signal. Not sure how to remedy.
+# I believe the code is 100% correct. Shell's seem quite buggy in their handling and
+# propogating of signals. Not sure how to debug even without something like gdb and going
+# through the source code of the shell too.
+runjob() {
+  job_name="$1"
+  shift
+  if [ $# -eq 0 ]; then
+    set "$job_name"
   fi
-  if [ "$_ASSERT_GOT" != "$_ASSERT_EXP" ]; then
-    printferr "expected $1='%s' but got '%s'\n" "$_ASSERT_EXP" "$_ASSERT_GOT"
+
+  if [ -n "${JOB_FILTER-}" ]; then
+    if ! _echo "$job_name" | grep -q "$JOB_FILTER"; then
+      # Skipped.
+      return 0
+    fi
+  fi
+
+  COLOR="$(get_rand_color "$job_name")"
+  _job_name="$job_name"
+  job_name="$(setaf "$COLOR" "$job_name")"
+  _echo "$job_name^:" "$*"
+
+  # We need to make sure we exit with a non zero exit if the command fails.
+  # /bin/sh does not support -o pipefail unfortunately.
+  job_tmpdir="$(mktemp -d)"
+  stdout="$job_tmpdir/stdout"
+  stderr="$job_tmpdir/stderr"
+  mkfifo "$stdout"
+  mkfifo "$stderr"
+
+  eval "_runjob $* &"
+}
+
+# This runs in a subshell so that we get output from the job even if it's shutting
+# down due to a ctrl+c. Without the subshell, sed would be a job of the parent
+# shell and so waitjobs would send SIGTERM to it.
+_runjob() {(
+  # We add the prefix to all lines and remove any warning lines about recursive make.
+  # We cannot silence these with -s which is unfortunate.
+  sed -e "s#^#$job_name: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
+  sed -e "s#^#$job_name: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
+
+  start="$(awk 'BEGIN{srand(); print srand()}')"
+  trap runjob_exittrap EXIT
+  "$@" >"$stdout" 2>"$stderr"
+)}
+
+runjob_exittrap() {
+  code="$?"
+  end="$(awk 'BEGIN{srand(); print srand()}')"
+  dur="$((end - start))"
+
+  waitjobs
+  if [ "$code" -eq 0 ]; then
+    _echo "$job_name\$:" "$(setaf 2 success)" "($(echo_dur "$dur"))"
+  else
+    _echo "$job_name\$:" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
+  fi
+  rm -r "$job_tmpdir"
+}
+
+waitjobs() {
+  JOBS="$(jobs -l)"
+  trap waitjobs_sigtrap INT TERM
+
+  for pid in $(jobs -p); do
+    if ! wait "$pid"; then
+      caterr <<EOF
+failed to wait on $pid:
+  $(_echo "$JOBS" | grep "$pid")
+EOF
+      FAILURE=1
+    fi
+  done
+  if [ -n "${FAILURE-}" ]; then
     exit 1
   fi
 }
+
+waitjobs_sigtrap() {
+  for pid in $(jobs -p); do
+    kill "$pid" 2> /dev/null || true
+  done
+  waitjobs
+}
+
+job_parseflags() {
+  while :; do
+    parseflag "$@"
+    shift "$FLAGSHIFT"
+
+    case "$FLAG" in
+      run) JOB_FILTER="$FLAGARG" ;;
+      h|help) cat <<EOF
+usage: $0 [--run=jobregex]
+EOF
+exit 0
+;;
+      "") break ;;
+      *)
+        echoerr "unrecognized flag $FLAG, run with --help to see usage"
+        return 1
+        ;;
+    esac
+  done
+}
 #!/bin/sh
+if [ "${LIB_TEST-}" ]; then
+  return 0
+fi
+LIB_TEST=1
+
+assert() {
+  if [ $# -gt 2 ]; then
+    exp="$3"
+    got="$2"
+  else
+    eval "got=\$$1"
+    exp="$2"
+  fi
+  if [ "$got" != "$exp" ]; then
+    echoerr "unexpected $1"
+    gitdiff_vars exp got
+    return 1
+  fi
+}
+
+gitdiff_vars() {
+  tmpdir="$(mktemp -d)"
+  eval "_echo \"\$$1\"" > "$tmpdir/$1"
+  eval "_echo \"\$$2\"" > "$tmpdir/$2"
+  set +e
+  gitdiff "$tmpdir/$1" "$tmpdir/$2"
+  code="$?"
+  set -e
+  if [ $code -eq 0 ]; then
+    rm -r "$tmpdir"
+  fi
+  return $code
+}
+
+gitdiff() {(
+  mkfifo "$tmpdir/fifo"
+  cat "$tmpdir/fifo" | diff-highlight | tail -n +3 &
+  trap waitjobs EXIT
+  # 1. If TERM is set we want colors regardless of if output is a TTY.
+  # 2. Use the best diff algorithm.
+  # 3. Highlight trailing whitespace.
+  GIT_CONFIG_NOSYSTEM=1 HOME= git ${TERM:+-c color.diff=always} diff \
+    --diff-algorithm=histogram \
+    --ws-error-highlight=all \
+    --no-index "$@" >"$tmpdir/fifo"
+)}
+#!/bin/sh
+if [ "${LIB_NOTIFY-}" ]; then
+  return 0
+fi
+LIB_NOTIFY=1
 
 notify() {
   if [ "$CI_MAKE_ROOT" -eq 0 -o -z "${CI:-}" ]; then

@@ -1,4 +1,9 @@
 #!/bin/sh
+if [ "${LIB_LOG-}" ]; then
+  return 0
+fi
+LIB_LOG=1
+. ./rand.sh
 
 tput() {
   if [ -n "$TERM" ]; then
@@ -23,29 +28,33 @@ get_rand_color() {
   pick "$*" 3 4 5 6 11 12 13 14
 }
 
-echop() {(
+echop() {
   prefix="$1"
   shift
 
   printfp "$prefix" "%s\n" "$*"
-)}
+}
 
-printfp() {(
+printfp() {
   prefix="$1"
   shift
 
   if [ -z "${COLOR:-}" ]; then
     COLOR="$(get_rand_color "$prefix")"
   fi
-  printf '%s: %s' "$(setaf "$COLOR" "$prefix")" "$(printf "$@")"
-)}
+  printf '%s: ' "$(setaf "$COLOR" "$prefix")"
+
+  if [ $# -gt 0 ]; then
+    printf "$@"
+  fi
+}
 
 echoerr() {
   COLOR=1 echop err "$*" >&2
 }
 
 caterr() {
-  COLOR=1 echop err >&2
+  COLOR=1 printfp err >&2
   cat >&2
 }
 
