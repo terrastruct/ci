@@ -116,7 +116,9 @@ logcat() {
 
 sh_c() {
   COLOR=3 logp exec "$*"
-  "$@"
+  if [ -z "${DRYRUN-}" ]; then
+    "$@"
+  fi
 }
 
 header() {
