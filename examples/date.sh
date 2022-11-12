@@ -4,15 +4,7 @@ cd -- "$(dirname "$0")/../lib"
 . ./flag.sh
 cd - >/dev/null
 
-unset FLAG \
-  FLAGARG \
-  FLAGSHIFT \
-  DATE_FORMAT \
-  OUTPUT
-while :; do
-  flag_parse "$@"
-  case "$FLAG" in
-    h|help)
+help() {
       cat <<EOF
 usage: $0 [...flags] [...zones]
 
@@ -42,38 +34,7 @@ Example:
   Saturday November 12 2022 PST
   Saturday November 12 2022 EST
 EOF
-      exit 0
-;;
-    o|output)
-      OUTPUT="${FLAGARG:-date-out.txt}"
-      shift "$FLAGSHIFT"
-      if [ "$OUTPUT" != - ]; then
-        exec >"$OUTPUT"
-      fi
-      ;;
-    s|short)
-      flag_noarg
-      DATE_FORMAT="%Y-%m-%d"
-      shift "$FLAGSHIFT"
-      ;;
-    l|long)
-      flag_noarg
-      DATE_FORMAT="%A %B %d %Y %Z"
-      shift "$FLAGSHIFT"
-      ;;
-    format)
-      flag_assertarg
-      DATE_FORMAT="$FLAGARG"
-      shift "$FLAGSHIFT"
-      ;;
-    '')
-      shift "$FLAGSHIFT"
-      break ;;
-    *)
-      flag_errusage "unrecognized flag $FLAGRAW"
-      ;;
-  esac
-done
+}
 
 _date() {
   if [ -n "${DATE_FORMAT-}" ]; then
@@ -83,12 +44,61 @@ _date() {
   fi
 }
 
-if [ $# -eq 0 ]; then
-  _date
-  exit 0
-fi
+main() {
+  unset FLAG \
+    FLAGRAW \
+    FLAGARG \
+    FLAGSHIFT \
+    DATE_FORMAT \
+    OUTPUT
+  while :; do
+    flag_parse "$@"
+    case "$FLAG" in
+      h|help)
+        help
+        return 0
+        ;;
+      o|output)
+        OUTPUT="${FLAGARG:-date-out.txt}"
+        shift "$FLAGSHIFT"
+        if [ "$OUTPUT" != - ]; then
+          exec >"$OUTPUT"
+        fi
+        ;;
+      s|short)
+        flag_noarg
+        DATE_FORMAT="%Y-%m-%d"
+        shift "$FLAGSHIFT"
+        ;;
+      l|long)
+        flag_noarg
+        DATE_FORMAT="%A %B %d %Y %Z"
+        shift "$FLAGSHIFT"
+        ;;
+      format)
+        flag_assertarg
+        DATE_FORMAT="$FLAGARG"
+        shift "$FLAGSHIFT"
+        ;;
+      '')
+        shift "$FLAGSHIFT"
+        break
+        ;;
+      *)
+        flag_errusage "unrecognized flag $FLAGRAW"
+        ;;
+    esac
+  done
 
-while [ $# -gt 0 ]; do
-  TZ=$1 _date
-  shift
-done
+  if [ $# -eq 0 ]; then
+    _date
+    return 0
+  fi
+
+  while [ $# -gt 0 ]; do
+    TZ=$1 _date
+    shift
+  done
+}
+
+main "$@"
