@@ -71,11 +71,11 @@ case4() {
 
 case5() {
   FLAGRAW=-m
-  assert flag_assertarg "$(TERM= flag_assertarg 2>&1)" "err: flag -m requires an argument
+  assert flag_reqarg "$(TERM= flag_reqarg 2>&1)" "err: flag -m requires an argument
      Run with --help for usage."
 
   FLAGRAW=--meow
-  assert flag_assertarg "$(TERM= flag_assertarg 2>&1)" "err: flag --meow requires an argument
+  assert flag_reqarg "$(TERM= flag_reqarg 2>&1)" "err: flag --meow requires an argument
      Run with --help for usage."
 }
 

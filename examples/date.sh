@@ -76,7 +76,7 @@ main() {
         shift "$FLAGSHIFT"
         ;;
       format)
-        flag_assertarg
+        flag_reqarg
         DATE_FORMAT="$FLAGARG"
         shift "$FLAGSHIFT"
         ;;

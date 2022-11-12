@@ -12,7 +12,7 @@ LIB_FLAG=1
 # - Always shift with FLAGSHIFT even if FLAG='' indicates no more flags.
 # - If the flag has no argument, remember to add back FLAGARG into $@
 #   and shift one less than FLAGSHIFT.
-# - If a flag always requires an argument, use flag_assertarg.
+# - If a flag always requires an argument, use flag_reqarg.
 # - If a flag does not require an argument, use flag_noarg.
 flag_parse() {
   case "${1-}" in
@@ -69,7 +69,7 @@ flag_parse() {
   return 0
 }
 
-flag_assertarg() {
+flag_reqarg() {
   if [ -z "$FLAGARG" ]; then
     flag_errusage "flag $FLAGRAW requires an argument"
   fi
