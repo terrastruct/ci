@@ -30,6 +30,6 @@ EOF
 }
 
 job_parseflags "$@"
-runjob case1
-runjob case2
+runjob case1 &
+runjob case2 &
 waitjobs

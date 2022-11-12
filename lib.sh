@@ -210,11 +210,15 @@ if [ "${LIB_JOB-}" ]; then
 fi
 LIB_JOB=1
 
-# Unfortunately this leaks subprocesses when killed via a signal. Not sure how to remedy.
-# I believe the code is 100% correct. Shell's seem quite buggy in their handling and
-# propogating of signals. Not sure how to debug even without something like gdb and going
-# through the source code of the shell too.
-runjob() {
+# This runs in a subshell so that we get output from the job even if it's shutting
+# down due to a ctrl+c. Without the subshell, sed would be a job of the parent
+# shell and so waitjobs would send SIGTERM to it.
+#
+# note: Unfortunately this leaks subprocesses when killed via a signal. Not sure how to
+# remedy. I believe the code is 100% correct. Shell's seem quite buggy in their handling
+# and propogating of signals. Not sure how to debug even without something like gdb and
+# going through the source code of the shell too.
+runjob() {(
   job_name="$1"
   shift
   if [ $# -eq 0 ]; then
@@ -241,13 +245,6 @@ runjob() {
   mkfifo "$stdout"
   mkfifo "$stderr"
 
-  eval "_runjob $* &"
-}
-
-# This runs in a subshell so that we get output from the job even if it's shutting
-# down due to a ctrl+c. Without the subshell, sed would be a job of the parent
-# shell and so waitjobs would send SIGTERM to it.
-_runjob() {(
   # We add the prefix to all lines and remove any warning lines about recursive make.
   # We cannot silence these with -s which is unfortunate.
   sed -e "s#^#$job_name: #" -e "/make\[.\]: warning: -j/d" "$stdout" &

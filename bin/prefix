@@ -2,5 +2,5 @@
 set -eu
 . "$(dirname "$0")/../lib.sh"
 
-runjob "$@"
+runjob "$@" &
 waitjobs

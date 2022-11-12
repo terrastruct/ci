@@ -91,10 +91,10 @@ case6() {
 }
 
 job_parseflags "$@"
-runjob case1
-runjob case2
-runjob case3
-runjob case4
-runjob case5
-runjob case6
+runjob case1 &
+runjob case2 &
+runjob case3 &
+runjob case4 &
+runjob case5 &
+runjob case6 &
 waitjobs
