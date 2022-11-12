@@ -10,17 +10,23 @@ case1() {
 }
 
 case2() {
-  case2_helper() {
+  case2_got() {
     TERM= caterr 2>&1 <<EOF
 It runs like x, where x is something unsavory yuppers.
 All the system's paths must be topologically and circularly interrelated for.
 EOF
   }
+  case2_exp() {
+    cat <<EOF
+err: It runs like x, where x is something unsavory yuppers.
+     All the system's paths must be topologically and circularly interrelated for.
+EOF
+  }
   # heredoc directly inside a command substitution isn't allowed.
-  got="$(case2_helper)"
+  got="$(case2_got)"
+  exp="$(case2_exp)"
 
-  assert got "err: It runs like x, where x is something unsavory yuppers.
-All the system's paths must be topologically and circularly interrelated for."
+  assert got "$exp"
 }
 
 job_parseflags "$@"
