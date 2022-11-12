@@ -12,7 +12,7 @@ if [ -n "${CI-}" ]; then
 fi
 
 >lib.sh
-find lib -name '*.sh' ! -name '*_test.sh' | while read fname; do
+find lib -name '*.sh' ! -name '*_test.sh' | sort | while read fname; do
   # Remove lines for sourcing dependency lib/*.sh files as all files are bundled into
   # lib.sh and so all dependencies will be satisfied. The individual files will not exist
   # when distributing just lib.sh and so sourcing will fail anyway.

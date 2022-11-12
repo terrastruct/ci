@@ -1,92 +1,4 @@
 #!/bin/sh
-if [ "${LIB_RAND-}" ]; then
-  return 0
-fi
-LIB_RAND=1
-
-rand() {
-  seed="$1"
-  range="$2"
-
-  seed_file="$(mktemp)"
-  _echo "$seed" | md5sum > "$seed_file"
-  shuf -i "$range" -n 1 --random-source="$seed_file"
-}
-
-pick() {
-  seed="$1"
-  shift
-  i="$(rand "$seed" "1-$#")"
-  eval "_echo \"\$$i\""
-}
-#!/bin/sh
-if [ "${LIB_GOLANG-}" ]; then
-  return 0
-fi
-LIB_GOLANG=1
-
-goos() {
-  case $1 in
-    macos) _echo darwin ;;
-    *) _echo $1 ;;
-  esac
-}
-#!/bin/sh
-if [ "${LIB_MAKE-}" ]; then
-  return 0
-fi
-LIB_MAKE=1
-
-_make() {
-  if [ "${CI:-}" ]; then
-    if ! is_changed .; then
-      return
-    fi
-    if [ "${GITHUB_TOKEN:-}" ]; then
-      git config --global credential.helper store
-      cat > ~/.git-credentials <<EOF
-https://cyborg-ts:$GITHUB_TOKEN@github.com
-EOF
-    fi
-    git submodule update --init --recursive
-  fi
-  if [ -z "${MAKE_LOG:-}" ]; then
-    CI_MAKE_ROOT=1
-    export MAKE_LOG="./.make-log"
-    set +e
-    # runtty is necessary to allow make to write its output unbuffered. Otherwise the
-    # output is printed in surges as the write buffer is exceeded rather than a continous
-    # stream. Remove the runtty prefix to experience the laggy behaviour without it.
-    runtty make -sj8 "$@" \
-      | tee /dev/stderr "$MAKE_LOG" \
-      | stripansi > "$MAKE_LOG.txt"
-  else
-    CI_MAKE_ROOT=0
-    set +e
-    make -sj8 "$@" 2>&1
-  fi
-
-  code="$?"
-  set -e
-  if [ "$code" -ne 0 ]; then
-    notify "$code"
-    return "$code"
-  fi
-  # make doesn't return a nonsuccess exit code on recipe failures.
-  if <"$MAKE_LOG" grep -q 'make.* \*\*\* .* Error'; then
-    notify 1
-    return 1
-  fi
-  if [ -n "${CI:-}" ]; then
-    # Make sure nothing has changed
-    if ! git_assert_clean; then
-      notify 1
-      return 1
-    fi
-  fi
-  notify 0
-}
-#!/bin/sh
 if [ "${LIB_FLAG-}" ]; then
   return 0
 fi
@@ -258,6 +170,131 @@ xargsd() {
   < "$CHANGED_FILES" grep "$pattern" | hide xargs ${CI:+-r} -t -P16 "-n${XARGS_N:-256}" -- "$@"
 }
 #!/bin/sh
+if [ "${LIB_GOLANG-}" ]; then
+  return 0
+fi
+LIB_GOLANG=1
+
+goos() {
+  case $1 in
+    macos) _echo darwin ;;
+    *) _echo $1 ;;
+  esac
+}
+#!/bin/sh
+if [ "${LIB_JOB-}" ]; then
+  return 0
+fi
+LIB_JOB=1
+
+# Unfortunately this leaks subprocesses when killed via a signal. Not sure how to remedy.
+# I believe the code is 100% correct. Shell's seem quite buggy in their handling and
+# propogating of signals. Not sure how to debug even without something like gdb and going
+# through the source code of the shell too.
+runjob() {
+  job_name="$1"
+  shift
+  if [ $# -eq 0 ]; then
+    set "$job_name"
+  fi
+
+  if [ -n "${JOB_FILTER-}" ]; then
+    if ! _echo "$job_name" | grep -q "$JOB_FILTER"; then
+      # Skipped.
+      return 0
+    fi
+  fi
+
+  COLOR="$(get_rand_color "$job_name")"
+  _job_name="$job_name"
+  job_name="$(setaf "$COLOR" "$job_name")"
+  _echo "$job_name^:" "$*"
+
+  # We need to make sure we exit with a non zero exit if the command fails.
+  # /bin/sh does not support -o pipefail unfortunately.
+  job_tmpdir="$(mktemp -d)"
+  stdout="$job_tmpdir/stdout"
+  stderr="$job_tmpdir/stderr"
+  mkfifo "$stdout"
+  mkfifo "$stderr"
+
+  eval "_runjob $* &"
+}
+
+# This runs in a subshell so that we get output from the job even if it's shutting
+# down due to a ctrl+c. Without the subshell, sed would be a job of the parent
+# shell and so waitjobs would send SIGTERM to it.
+_runjob() {(
+  # We add the prefix to all lines and remove any warning lines about recursive make.
+  # We cannot silence these with -s which is unfortunate.
+  sed -e "s#^#$job_name: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
+  sed -e "s#^#$job_name: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
+
+  start="$(awk 'BEGIN{srand(); print srand()}')"
+  trap runjob_exittrap EXIT
+  "$@" >"$stdout" 2>"$stderr"
+)}
+
+runjob_exittrap() {
+  code="$?"
+  end="$(awk 'BEGIN{srand(); print srand()}')"
+  dur="$((end - start))"
+
+  waitjobs
+  if [ "$code" -eq 0 ]; then
+    _echo "$job_name\$:" "$(setaf 2 success)" "($(echo_dur "$dur"))"
+  else
+    _echo "$job_name\$:" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
+  fi
+  rm -r "$job_tmpdir"
+}
+
+waitjobs() {
+  JOBS="$(jobs -l)"
+  trap waitjobs_sigtrap INT TERM
+
+  for pid in $(jobs -p); do
+    if ! wait "$pid"; then
+      caterr <<EOF
+failed to wait on $pid:
+  $(_echo "$JOBS" | grep "$pid")
+EOF
+      FAILURE=1
+    fi
+  done
+  if [ -n "${FAILURE-}" ]; then
+    exit 1
+  fi
+}
+
+waitjobs_sigtrap() {
+  for pid in $(jobs -p); do
+    kill "$pid" 2> /dev/null || true
+  done
+  waitjobs
+}
+
+job_parseflags() {
+  while :; do
+    parseflag "$@"
+    shift "$FLAGSHIFT"
+
+    case "$FLAG" in
+      run) JOB_FILTER="$FLAGARG" ;;
+      h|help) cat <<EOF
+usage: $0 [--run=jobregex]
+EOF
+exit 0
+;;
+      "") break ;;
+      *)
+        echoerr "unrecognized flag $FLAG, run with --help to see usage"
+        return 1
+        ;;
+    esac
+  done
+}
+#!/bin/sh
 if [ "${LIB_LOG-}" ]; then
   return 0
 fi
@@ -383,165 +420,60 @@ aws() {
   command aws "$@" > /dev/stdout
 }
 #!/bin/sh
-if [ "${LIB_JOB-}" ]; then
+if [ "${LIB_MAKE-}" ]; then
   return 0
 fi
-LIB_JOB=1
+LIB_MAKE=1
 
-# Unfortunately this leaks subprocesses when killed via a signal. Not sure how to remedy.
-# I believe the code is 100% correct. Shell's seem quite buggy in their handling and
-# propogating of signals. Not sure how to debug even without something like gdb and going
-# through the source code of the shell too.
-runjob() {
-  job_name="$1"
-  shift
-  if [ $# -eq 0 ]; then
-    set "$job_name"
-  fi
-
-  if [ -n "${JOB_FILTER-}" ]; then
-    if ! _echo "$job_name" | grep -q "$JOB_FILTER"; then
-      # Skipped.
-      return 0
+_make() {
+  if [ "${CI:-}" ]; then
+    if ! is_changed .; then
+      return
     fi
-  fi
-
-  COLOR="$(get_rand_color "$job_name")"
-  _job_name="$job_name"
-  job_name="$(setaf "$COLOR" "$job_name")"
-  _echo "$job_name^:" "$*"
-
-  # We need to make sure we exit with a non zero exit if the command fails.
-  # /bin/sh does not support -o pipefail unfortunately.
-  job_tmpdir="$(mktemp -d)"
-  stdout="$job_tmpdir/stdout"
-  stderr="$job_tmpdir/stderr"
-  mkfifo "$stdout"
-  mkfifo "$stderr"
-
-  eval "_runjob $* &"
-}
-
-# This runs in a subshell so that we get output from the job even if it's shutting
-# down due to a ctrl+c. Without the subshell, sed would be a job of the parent
-# shell and so waitjobs would send SIGTERM to it.
-_runjob() {(
-  # We add the prefix to all lines and remove any warning lines about recursive make.
-  # We cannot silence these with -s which is unfortunate.
-  sed -e "s#^#$job_name: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
-  sed -e "s#^#$job_name: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
-
-  start="$(awk 'BEGIN{srand(); print srand()}')"
-  trap runjob_exittrap EXIT
-  "$@" >"$stdout" 2>"$stderr"
-)}
-
-runjob_exittrap() {
-  code="$?"
-  end="$(awk 'BEGIN{srand(); print srand()}')"
-  dur="$((end - start))"
-
-  waitjobs
-  if [ "$code" -eq 0 ]; then
-    _echo "$job_name\$:" "$(setaf 2 success)" "($(echo_dur "$dur"))"
-  else
-    _echo "$job_name\$:" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
-  fi
-  rm -r "$job_tmpdir"
-}
-
-waitjobs() {
-  JOBS="$(jobs -l)"
-  trap waitjobs_sigtrap INT TERM
-
-  for pid in $(jobs -p); do
-    if ! wait "$pid"; then
-      caterr <<EOF
-failed to wait on $pid:
-  $(_echo "$JOBS" | grep "$pid")
+    if [ "${GITHUB_TOKEN:-}" ]; then
+      git config --global credential.helper store
+      cat > ~/.git-credentials <<EOF
+https://cyborg-ts:$GITHUB_TOKEN@github.com
 EOF
-      FAILURE=1
     fi
-  done
-  if [ -n "${FAILURE-}" ]; then
-    exit 1
+    git submodule update --init --recursive
   fi
-}
-
-waitjobs_sigtrap() {
-  for pid in $(jobs -p); do
-    kill "$pid" 2> /dev/null || true
-  done
-  waitjobs
-}
-
-job_parseflags() {
-  while :; do
-    parseflag "$@"
-    shift "$FLAGSHIFT"
-
-    case "$FLAG" in
-      run) JOB_FILTER="$FLAGARG" ;;
-      h|help) cat <<EOF
-usage: $0 [--run=jobregex]
-EOF
-exit 0
-;;
-      "") break ;;
-      *)
-        echoerr "unrecognized flag $FLAG, run with --help to see usage"
-        return 1
-        ;;
-    esac
-  done
-}
-#!/bin/sh
-if [ "${LIB_TEST-}" ]; then
-  return 0
-fi
-LIB_TEST=1
-
-assert() {
-  if [ $# -gt 2 ]; then
-    exp="$3"
-    got="$2"
+  if [ -z "${MAKE_LOG:-}" ]; then
+    CI_MAKE_ROOT=1
+    export MAKE_LOG="./.make-log"
+    set +e
+    # runtty is necessary to allow make to write its output unbuffered. Otherwise the
+    # output is printed in surges as the write buffer is exceeded rather than a continous
+    # stream. Remove the runtty prefix to experience the laggy behaviour without it.
+    runtty make -sj8 "$@" \
+      | tee /dev/stderr "$MAKE_LOG" \
+      | stripansi > "$MAKE_LOG.txt"
   else
-    eval "got=\$$1"
-    exp="$2"
+    CI_MAKE_ROOT=0
+    set +e
+    make -sj8 "$@" 2>&1
   fi
-  if [ "$got" != "$exp" ]; then
-    echoerr "unexpected $1"
-    gitdiff_vars exp got
-    return 1
-  fi
-}
 
-gitdiff_vars() {
-  tmpdir="$(mktemp -d)"
-  eval "_echo \"\$$1\"" > "$tmpdir/$1"
-  eval "_echo \"\$$2\"" > "$tmpdir/$2"
-  set +e
-  gitdiff "$tmpdir/$1" "$tmpdir/$2"
   code="$?"
   set -e
-  if [ $code -eq 0 ]; then
-    rm -r "$tmpdir"
+  if [ "$code" -ne 0 ]; then
+    notify "$code"
+    return "$code"
   fi
-  return $code
+  # make doesn't return a nonsuccess exit code on recipe failures.
+  if <"$MAKE_LOG" grep -q 'make.* \*\*\* .* Error'; then
+    notify 1
+    return 1
+  fi
+  if [ -n "${CI:-}" ]; then
+    # Make sure nothing has changed
+    if ! git_assert_clean; then
+      notify 1
+      return 1
+    fi
+  fi
+  notify 0
 }
-
-gitdiff() {(
-  mkfifo "$tmpdir/fifo"
-  cat "$tmpdir/fifo" | diff-highlight | tail -n +3 &
-  trap waitjobs EXIT
-  # 1. If TERM is set we want colors regardless of if output is a TTY.
-  # 2. Use the best diff algorithm.
-  # 3. Highlight trailing whitespace.
-  GIT_CONFIG_NOSYSTEM=1 HOME= git ${TERM:+-c color.diff=always} diff \
-    --diff-algorithm=histogram \
-    --ws-error-highlight=all \
-    --no-index "$@" >"$tmpdir/fifo"
-)}
 #!/bin/sh
 if [ "${LIB_NOTIFY-}" ]; then
   return 0
@@ -625,3 +557,71 @@ $emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
   fi
   sh_c curl -fsSL -X POST -H 'Content-type: application/json' --data "$json" "$url" > /dev/null
 }
+#!/bin/sh
+if [ "${LIB_RAND-}" ]; then
+  return 0
+fi
+LIB_RAND=1
+
+rand() {
+  seed="$1"
+  range="$2"
+
+  seed_file="$(mktemp)"
+  _echo "$seed" | md5sum > "$seed_file"
+  shuf -i "$range" -n 1 --random-source="$seed_file"
+}
+
+pick() {
+  seed="$1"
+  shift
+  i="$(rand "$seed" "1-$#")"
+  eval "_echo \"\$$i\""
+}
+#!/bin/sh
+if [ "${LIB_TEST-}" ]; then
+  return 0
+fi
+LIB_TEST=1
+
+assert() {
+  if [ $# -gt 2 ]; then
+    exp="$3"
+    got="$2"
+  else
+    eval "got=\$$1"
+    exp="$2"
+  fi
+  if [ "$got" != "$exp" ]; then
+    echoerr "unexpected $1"
+    gitdiff_vars exp got
+    return 1
+  fi
+}
+
+gitdiff_vars() {
+  tmpdir="$(mktemp -d)"
+  eval "_echo \"\$$1\"" > "$tmpdir/$1"
+  eval "_echo \"\$$2\"" > "$tmpdir/$2"
+  set +e
+  gitdiff "$tmpdir/$1" "$tmpdir/$2"
+  code="$?"
+  set -e
+  if [ $code -eq 0 ]; then
+    rm -r "$tmpdir"
+  fi
+  return $code
+}
+
+gitdiff() {(
+  mkfifo "$tmpdir/fifo"
+  cat "$tmpdir/fifo" | diff-highlight | tail -n +3 &
+  trap waitjobs EXIT
+  # 1. If TERM is set we want colors regardless of if output is a TTY.
+  # 2. Use the best diff algorithm.
+  # 3. Highlight trailing whitespace.
+  GIT_CONFIG_NOSYSTEM=1 HOME= git ${TERM:+-c color.diff=always} diff \
+    --diff-algorithm=histogram \
+    --ws-error-highlight=all \
+    --no-index "$@" >"$tmpdir/fifo"
+)}

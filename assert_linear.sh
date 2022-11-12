@@ -1,7 +1,6 @@
 #!/bin/sh
 set -eu
 . "$(dirname "$0")/lib.sh"
-cd -- "$(dirname "$0")/.."
 
 # assert_linear.sh ensures that the current commit does not contain any PR merge commits
 # compared to master as if it does, then that means our diffing mechanisms will be
