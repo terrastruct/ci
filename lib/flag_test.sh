@@ -8,17 +8,17 @@ cd - >/dev/null
 case1() {
   set -- -ok=meow --ok=meow -
 
-  parseflag "$@"
+  flag_parse "$@"
   assert FLAG ok
   assert FLAGARG meow
   shift "$FLAGSHIFT"
 
-  parseflag "$@"
+  flag_parse "$@"
   assert FLAG ok
   assert FLAGARG meow
   shift "$FLAGSHIFT"
 
-  parseflag "$@"
+  flag_parse "$@"
   assert FLAG ''
   assert FLAGARG ''
   shift "$FLAGSHIFT"
@@ -29,17 +29,17 @@ case1() {
 case2() {
   set -- -m ok --coola joola --
 
-  parseflag "$@"
+  flag_parse "$@"
   assert FLAG m
   assert FLAGARG ok
   shift "$FLAGSHIFT"
 
-  parseflag "$@"
+  flag_parse "$@"
   assert FLAG coola
   assert FLAGARG joola
   shift "$FLAGSHIFT"
 
-  parseflag "$@"
+  flag_parse "$@"
   assert FLAG ''
   assert FLAGARG ''
   shift "$FLAGSHIFT"
@@ -50,18 +50,18 @@ case2() {
 case3() {
   set -- -m -- - wow lol more args
 
-  parseflag "$@"
+  flag_parse "$@"
   assert FLAG m
   assert FLAGARG ''
   shift "$FLAGSHIFT"
 
-  assert @ "$*" '- wow lol more args'
+  assert @ "$*" '-- - wow lol more args'
 }
 
 case4() {
   set -- -some -
 
-  parseflag "$@"
+  flag_parse "$@"
   assert FLAG some
   assert FLAGARG -
   shift "$FLAGSHIFT"
@@ -71,16 +71,28 @@ case4() {
 
 case5() {
   FLAG=m
-  assert flag_req_arg_err "$(TERM= flag_req_arg_err 2>&1)" "err: flag -m requires an argument, run with --help to see full usage"
+  assert flag_assert_arg "$(TERM= flag_assert_arg 2>&1)" "err: flag -m requires an argument, run with --help to see full usage"
 
   FLAG=meow
-  assert flag_req_arg_err "$(TERM= flag_req_arg_err 2>&1)" "err: flag --meow requires an argument, run with --help to see full usage"
+  assert flag_assert_arg "$(TERM= flag_assert_arg 2>&1)" "err: flag --meow requires an argument, run with --help to see full usage"
 }
 
-job_parseflags "$@"
+case6() {
+  set -- -o --long
+
+  flag_parse "$@"
+  assert FLAG o
+  assert FLAGARG ''
+  shift "$FLAGSHIFT"
+
+  assert @ "$*" '--long'
+}
+
+job_flag_parses "$@"
 runjob case1
 runjob case2
 runjob case3
 runjob case4
 runjob case5
+runjob case6
 waitjobs

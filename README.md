@@ -10,3 +10,5 @@ Currently used by:
 - https://github.com/terrastruct/d2-docs
 
 And in our internal monorepo.
+
+For robust example usage of the flag parser see [./examples/date.sh](./examples/date.sh).

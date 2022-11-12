@@ -5,8 +5,17 @@ fi
 LIB_FLAG=1
 . ./log.sh
 
-# Always shift with FLAGSHIFT even if FLAG='' indicating no more flags.
-parseflag() {
+# flag_parse implements a robust flag parser.
+#
+# For a full fledge example see ../examples/date.sh
+#
+# notes:
+# - Always shift with FLAGSHIFT even if FLAG='' indicates no more flags.
+# - If the flag has no argument, remember to add back FLAGARG into $@
+#   and shift one less than FLAGSHIFT.
+# - If a flag always requires an argument, use flag_assert_arg.
+# - If a flag does not require an argument, use flag_no_arg.
+flag_parse() {
   case "${1-}" in
     -*=*)
       # Remove everything after first equal sign.
@@ -16,19 +25,16 @@ parseflag() {
       # Remove everything before first equal sign.
       FLAGARG="${1#*=}"
       FLAGSHIFT=1
-      return 0
       ;;
     -)
       FLAG=
       FLAGARG=
       FLAGSHIFT=0
-      return 0
       ;;
     --)
       FLAG=
       FLAGARG=
       FLAGSHIFT=1
-      return 0
       ;;
     -*)
       # Remove leading hyphens.
@@ -36,27 +42,40 @@ parseflag() {
       FLAGARG=
       FLAGSHIFT=1
       if [ $# -gt 1 ]; then
-        FLAGSHIFT=2
-        if [ "$2" = -- ] ; then
-          FLAGARG=
-        else
-          FLAGARG="$2"
-        fi
+        case "$2" in
+          -)
+            FLAGARG="$2"
+            FLAGSHIFT=2
+            ;;
+          -*)
+            ;;
+          *)
+            FLAGARG="$2"
+            FLAGSHIFT=2
+            ;;
+        esac
       fi
-      return 0
       ;;
     *)
       FLAG=
       FLAGARG=
       FLAGSHIFT=0
-      return 0
       ;;
   esac
+  return 0
 }
 
-flag_req_arg_err() {
-  echoerr "flag $(_flag_fmt) requires an argument, run with --help to see full usage"
-  exit 1
+flag_assert_arg() {
+  if [ -z "$FLAGARG" ]; then
+    echoerr "flag $(_flag_fmt) requires an argument, run with --help to see full usage"
+    return 1
+  fi
+}
+
+flag_no_arg() {
+  if [ "$FLAGSHIFT" -eq 2 ]; then
+    FLAGSHIFT=1
+  fi
 }
 
 _flag_fmt() {

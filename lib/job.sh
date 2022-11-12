@@ -93,9 +93,9 @@ waitjobs_sigtrap() {
   waitjobs
 }
 
-job_parseflags() {
+job_flag_parses() {
   while :; do
-    parseflag "$@"
+    flag_parse "$@"
     shift "$FLAGSHIFT"
 
     case "$FLAG" in
@@ -112,4 +112,9 @@ exit 0
         ;;
     esac
   done
+
+  if [ $# -gt 0 ]; then
+    echoerr "$0 does not accept any arguments, run with --help to see usage"
+    return 1
+  fi
 }
