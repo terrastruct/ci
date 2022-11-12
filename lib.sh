@@ -252,7 +252,7 @@ runjob() {(
 
   start="$(awk 'BEGIN{srand(); print srand()}')"
   trap runjob_exittrap EXIT
-  "$@" >"$stdout" 2>"$stderr"
+  eval "$*" >"$stdout" 2>"$stderr"
 )}
 
 runjob_exittrap() {
