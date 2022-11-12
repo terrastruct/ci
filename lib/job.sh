@@ -56,7 +56,7 @@ runjob_exittrap() {
   end="$(awk 'BEGIN{srand(); print srand()}')"
   dur="$((end - start))"
 
-  waitjobs
+  waitjobs_sigtrap
   if [ "$code" -eq 0 ]; then
     _echo "$job_name\$:" "$(setaf 2 success)" "($(echo_dur "$dur"))"
   else
