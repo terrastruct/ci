@@ -313,7 +313,9 @@ echoerr() {
 
 caterr() {
   COLOR=1 printfp err >&2
-  cat >&2
+  read -r line
+  _echo "$line"
+  sed 's/^/     /' >&2
 }
 
 printferr() {
