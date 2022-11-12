@@ -32,30 +32,39 @@ echop() {
   prefix="$1"
   shift
 
-  printfp "$prefix" "%s\n" "$*"
+  if [ "$#" -gt 0 ]; then
+    printfp "$prefix" "%s\n" "$*"
+  else
+    printfp "$prefix"
+    printf '\n'
+  fi
 }
 
-printfp() {
+printfp() {(
   prefix="$1"
   shift
 
   if [ -z "${COLOR:-}" ]; then
     COLOR="$(get_rand_color "$prefix")"
   fi
-  printf '%s: ' "$(setaf "$COLOR" "$prefix")"
+  printf '%s' "$(setaf "$COLOR" "$prefix")"
 
   if [ $# -gt 0 ]; then
+    printf ': '
     printf "$@"
   fi
-}
+)}
 
 catp() {
   prefix="$1"
+  shift
+
   printfp "$prefix"
+  printf ': '
   read -r line
   _echo "$line"
 
-  indent=$(repeat ' ' $(( $(strlen "$prefix") + 2 )))
+  indent=$(repeat ' ' 2)
   sed "s/^/$indent/"
 }
 
@@ -81,9 +90,37 @@ printferr() {
   COLOR=1 printfp err "$@" >&2
 }
 
+logp() {
+  echop "$@" >&2
+}
+
+logfp() {
+  printfp "$@" >&2
+}
+
+logpcat() {
+  catp "$@" >&2
+}
+
+log() {
+  COLOR=5 logp log "$@"
+}
+
+logf() {
+  COLOR=5 logfp log "$@"
+}
+
+logcat() {
+  COLOR=5 catp log "$@" >&2
+}
+
 sh_c() {
-  COLOR=3 echop exec "$*"
+  COLOR=3 logp exec "$*"
   "$@"
+}
+
+header() {
+  logp "/* $1 */"
 }
 
 hide() {
