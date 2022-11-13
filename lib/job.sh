@@ -29,7 +29,6 @@ runjob() {(
   fi
 
   COLOR="$(get_rand_color "$job_name")"
-  _job_name="$job_name"
   job_name="$(setaf "$COLOR" "$job_name")"
   _echo "$job_name^:" "$*"
 
