@@ -193,18 +193,6 @@ xargsd() {
   < "$CHANGED_FILES" grep "$pattern" | hide xargs ${CI:+-r} -t -P16 "-n${XARGS_N:-256}" -- "$@"
 }
 #!/bin/sh
-if [ "${LIB_GOLANG-}" ]; then
-  return 0
-fi
-LIB_GOLANG=1
-
-goos() {
-  case $1 in
-    macos) _echo darwin ;;
-    *) _echo $1 ;;
-  esac
-}
-#!/bin/sh
 if [ "${LIB_JOB-}" ]; then
   return 0
 fi
@@ -552,6 +540,18 @@ EOF
     fi
   fi
   notify 0
+}
+#!/bin/sh
+if [ "${LIB_MISC-}" ]; then
+  return 0
+fi
+LIB_MISC=1
+
+goos() {
+  case $1 in
+    macos) _echo darwin ;;
+    *) _echo $1 ;;
+  esac
 }
 #!/bin/sh
 if [ "${LIB_NOTIFY-}" ]; then

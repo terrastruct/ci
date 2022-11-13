@@ -1,8 +1,8 @@
 #!/bin/sh
-if [ "${LIB_GOLANG-}" ]; then
+if [ "${LIB_MISC-}" ]; then
   return 0
 fi
-LIB_GOLANG=1
+LIB_MISC=1
 . ./log.sh
 
 goos() {
