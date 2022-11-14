@@ -92,14 +92,18 @@ waitjobs_sigtrap() {
 job_parseflags() {
   while :; do
     flag_parse "$@"
-    shift "$FLAGSHIFT"
 
     case "$FLAG" in
-      run) JOB_FILTER="$FLAGARG" ;;
-      h|help) cat <<EOF
+      run)
+        flag_reqarg
+        JOB_FILTER="$FLAGARG"
+        shift "$FLAGSHIFT"
+        ;;
+      h|help)
+      cat <<EOF
 usage: $0 [--run=jobregex]
 EOF
-exit 0
+      exit 0
 ;;
       "") break ;;
       *)
