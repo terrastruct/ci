@@ -137,11 +137,14 @@ main() {
   header '9_upload_assets' && _9_upload_assets
 
   COLOR=2 header 'final steps'
-  cat >&2 <<EOF
-1. Review and test the release: $release_url
-2. Merge the PR: $pr_url
-3. Publish the release!
-EOF
+  log "1. Review and test the release: $release_url"
+  log "2. Merge the PR: $pr_url"
+  if [ -n "${pr_url_repo-}" ]; then
+    log "3. Merge the release repo PR: $pr_url_repo"
+    log '4. Publish the release!'
+  else
+    log '3. Publish the release!'
+  fi
 }
 
 _1_ensure_branch() {
@@ -249,14 +252,32 @@ _6_ensure_release() {
 
 _7_ensure_pr() {
   # We do not use gh pr view as that includes closed PRs.
-  pr_url="$(gh pr list --repo "$REPO" --head "$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
-  body="Will be available at $(cd "$REPO_DIR" && gh repo view --json=url '--template={{ .url }}')/releases/tag/$VERSION"
+  pr_url="$(gh pr list --head "$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
+  body="Will be available at $(gh repo view --json=url '--template={{ .url }}')/releases/tag/$VERSION"
   if [ -n "$pr_url" ]; then
-    sh_c gh pr edit --repo "$REPO" --body "'$body'" "$VERSION"
+    pr_url=$(sh_c gh pr edit --body "'$body'" "$VERSION" | tee /dev/stderr)
     return 0
   fi
 
-  pr_url="$(cd "$REPO_DIR" && sh_c gh pr create --repo "$REPO" --fill --body "'$body'" | tee /dev/stderr)"
+  pr_url="$(sh_c gh pr create --repo "$REPO" --fill --body "'$body'" | tee /dev/stderr)"
+
+  _7_ensure_pr_repo
+}
+
+_7_ensure_pr_repo() {
+  if [ "$REPO_DIR" == . ]; then
+    return 0
+  fi
+
+  # We do not use gh pr view as that includes closed PRs.
+  pr_url_repo="$(gh pr list --repo "$REPO" --head "$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
+  body="Will be available at $(cd "$REPO_DIR" && gh repo view --json=url '--template={{ .url }}')/releases/tag/$VERSION"
+  if [ -n "$pr_url_repo" ]; then
+    pr_url_repo=$(sh_c gh pr edit --repo "$REPO" --body "'$body'" "$VERSION" | tee /dev/stderr)
+    return 0
+  fi
+
+  pr_url_repo="$(cd "$REPO_DIR" && sh_c gh pr create --repo "$REPO" --fill --body "'$body'" | tee /dev/stderr)"
 }
 
 _8_ensure_assets() {
