@@ -4,7 +4,7 @@ set -eu
 
 help() {
   cat <<EOF
-usage: $0 [--rebuild] <version>
+usage: $0 [--rebuild] --version=<version>
 
 $0 implements the $REPO release process.
 
@@ -87,6 +87,10 @@ main() {
         flag_noarg && shift "$FLAGSHIFT"
         SKIP_BUILD=1
         ;;
+      version)
+        flag_nonemptyarg && shift "$FLAGSHIFT"
+        VERSION=$FLAGARG
+        ;;
       '')
         shift "$FLAGSHIFT"
         break
@@ -97,11 +101,15 @@ main() {
     esac
   done
 
-  if [ $# -ne 1 ]; then
-    flag_errusage "first argument must be release version like v0.0.99"
+  if [ $# -gt 0 ]; then
+    flag_errusage "no arguments are accepted"
   fi
-  VERSION="$1"
-  shift
+
+  VERSION=${VERSION:-$(git describe 2>/dev/null)}
+  if [ -z "${VERSION-}" ]; then
+    echoerr "no --version passed and unable to determine version from git describe"
+    exit 1
+  fi
 
   if [ -z "${REPO-}" ]; then
     REPO=$(gh_repo)
