@@ -166,13 +166,13 @@ case_reqarg() {
   flag_parse "$@"
   assert FLAG m
   assert flag_reqarg "$(TERM= flag_reqarg 2>&1)" "err: flag -m requires an argument
-  Run with --help for usage."
+err: Run with --help for usage."
 
   set -- --meow
   flag_parse "$@"
   assert FLAG meow
   assert flag_reqarg "$(TERM= flag_reqarg 2>&1)" "err: flag --meow requires an argument
-  Run with --help for usage."
+err: Run with --help for usage."
 
   set -- --jingle=''
   flag_parse "$@"
@@ -187,19 +187,19 @@ case_nonemptyarg() {
   flag_parse "$@"
   assert FLAG m
   assert flag_nonemptyarg "$(TERM= flag_nonemptyarg 2>&1)" "err: flag -m requires an argument
-  Run with --help for usage."
+err: Run with --help for usage."
 
   set -- --meow
   flag_parse "$@"
   assert FLAG meow
   assert flag_nonemptyarg "$(TERM= flag_nonemptyarg 2>&1)" "err: flag --meow requires an argument
-  Run with --help for usage."
+err: Run with --help for usage."
 
   set -- --jingle=''
   flag_parse "$@"
   assert FLAG jingle
   assert flag_nonemptyarg "$(TERM= flag_nonemptyarg 2>&1)" "err: flag --jingle requires a non-empty argument
-  Run with --help for usage."
+err: Run with --help for usage."
 }
 
 case_noarg() {
@@ -221,7 +221,7 @@ case_noarg() {
   flag_parse "$@"
   assert FLAG z
   assert flag_noarg "$(TERM= flag_noarg 2>&1)" "err: flag -z does not accept an argument
-  Run with --help for usage."
+err: Run with --help for usage."
 }
 
 case_flag_fmt() {

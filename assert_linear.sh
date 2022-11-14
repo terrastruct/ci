@@ -17,7 +17,7 @@ merges="$(git --no-pager log --merges --grep="Merge pull request" --grep="\[ci-b
 if [ -n "$merges" ]; then
   caterr <<EOF
 Found merge pull request commit(s) in PR: $(_echo "$merges" | tr '\n' ' ')
-  Each pull request must be merged separately for CI to run correctly.
+Each pull request must be merged separately for CI to run correctly.
 EOF
   exit 1
 fi

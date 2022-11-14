@@ -47,9 +47,9 @@ flag_parse() {
     -*=*)
       # Remove everything after first equal sign.
       FLAG="${1%%=*}"
-      FLAGRAW="$FLAG"
       # Remove leading hyphens.
       FLAG="${FLAG#-}"; FLAG="${FLAG#-}"
+      FLAGRAW="$(flag_fmt)"
       # Remove everything before first equal sign.
       FLAGARG="${1#*=}"
       FLAGSHIFT=1
@@ -69,7 +69,7 @@ flag_parse() {
     -*)
       # Remove leading hyphens.
       FLAG="${1#-}"; FLAG="${FLAG#-}"
-      FLAGRAW=$1
+      FLAGRAW=$(flag_fmt)
       unset FLAGARG
       FLAGSHIFT=1
       if [ $# -gt 1 ]; then
@@ -126,6 +126,14 @@ $1
 Run with --help for usage.
 EOF
   return 1
+}
+
+flag_fmt() {
+  if [ "$(printf %s "$FLAG" | wc -c)" -eq 1 ]; then
+    echo "-$FLAG"
+  else
+    echo "--$FLAG"
+  fi
 }
 #!/bin/sh
 if [ "${LIB_GIT-}" ]; then
@@ -330,7 +338,7 @@ waitjobs() {
     if ! wait "$pid"; then
       caterr <<EOF
 failed to wait on $pid:
-  $(_echo "$JOBS" | grep "$pid")
+$(_echo "$JOBS" | grep "$pid")
 EOF
       FAILURE=1
     fi
@@ -381,6 +389,10 @@ if [ "${LIB_LOG-}" ]; then
   return 0
 fi
 LIB_LOG=1
+
+command_exists() {
+  command -v "$@" >/dev/null
+}
 
 tput() {
   if [ -n "$TERM" ]; then
@@ -436,13 +448,7 @@ catp() {
   prefix="$1"
   shift
 
-  printfp "$prefix"
-  printf ': '
-  read -r line
-  _echo "$line"
-
-  indent=$(repeat ' ' 2)
-  sed "s/^/$indent/"
+  sed "s/^/$(printfp "$prefix" '')/"
 }
 
 repeat() {
@@ -456,27 +462,27 @@ strlen() {
 }
 
 echoerr() {
-  COLOR=1 echop err "$*" >&2
+  COLOR=1 echop err "$*" | humanpath>&2
 }
 
 caterr() {
-  COLOR=1 catp err "$@" >&2
+  COLOR=1 catp err "$@" | humanpath >&2
 }
 
 printferr() {
-  COLOR=1 printfp err "$@" >&2
+  COLOR=1 printfp err "$@" | humanpath >&2
 }
 
 logp() {
-  echop "$@" >&2
+  echop "$@" | humanpath >&2
 }
 
 logfp() {
-  printfp "$@" >&2
+  printfp "$@" | humanpath >&2
 }
 
 logpcat() {
-  catp "$@" >&2
+  catp "$@" | humanpath >&2
 }
 
 log() {
@@ -506,8 +512,36 @@ sh_c() {
   fi
 }
 
+sudo_sh_c() {
+  if [ "$(id -u)" -eq 0 ]; then
+    sh_c "$@"
+  # elif command_exists doas; then
+  #   sh_c "doas $*"
+  # elif command_exists sudo; then
+  #   sh_c "sudo $*"
+  # elif command_exists su; then
+  #   sh_c "su root -c '$*'"
+  else
+    caterr <<EOF
+This script needs to run the following command as root:
+  $*
+Please install doas, sudo, or su.
+EOF
+    exit 1
+  fi
+}
+
 header() {
   logp "/* $1 */"
+}
+
+# humanpath replaces all occurrences of $HOME with ~
+humanpath() {
+  if [ -z "${HOME-}" ]; then
+    cat
+  else
+    sed "s#$HOME#~#g"
+  fi
 }
 
 hide() {
@@ -621,32 +655,6 @@ if [ "${LIB_MISC-}" ]; then
   return 0
 fi
 LIB_MISC=1
-
-goos() {
-  case $1 in
-    macos) _echo darwin ;;
-    *) _echo $1 ;;
-  esac
-}
-
-os() {
-  uname="$(uname)"
-  case $uname in
-    Linux) echo linux ;;
-    Darwin) echo macos ;;
-    FreeBSD) echo freebsd ;;
-    *) echo "$uname" ;;
-  esac
-}
-
-arch() {
-  uname_m=$(uname -m)
-  case $uname_m in
-    aarch64) echo arm64 ;;
-    x86_64) echo amd64 ;;
-    *) echo "$uname_m" ;;
-  esac
-}
 
 aws() {
   # Without the redirection aws's cli will write directly to /dev/tty bypassing prefix.
@@ -764,6 +772,37 @@ pick() {
   shift
   i="$(rand "$seed" "1-$#")"
   eval "_echo \"\$$i\""
+}
+#!/bin/sh
+if [ "${LIB_RELEASE-}" ]; then
+  return 0
+fi
+LIB_RELEASE=1
+
+goos() {
+  case $1 in
+    macos) echo darwin ;;
+    *) echo $1 ;;
+  esac
+}
+
+os() {
+  uname=$(uname)
+  case $uname in
+    Linux) echo linux ;;
+    Darwin) echo macos ;;
+    FreeBSD) echo freebsd ;;
+    *) echo "$uname" ;;
+  esac
+}
+
+arch() {
+  uname_m=$(uname -m)
+  case $uname_m in
+    aarch64) echo arm64 ;;
+    x86_64) echo amd64 ;;
+    *) echo "$uname_m" ;;
+  esac
 }
 #!/bin/sh
 if [ "${LIB_TEST-}" ]; then

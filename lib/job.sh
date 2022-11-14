@@ -99,7 +99,7 @@ waitjobs() {
     if ! wait "$pid"; then
       caterr <<EOF
 failed to wait on $pid:
-  $(_echo "$JOBS" | grep "$pid")
+$(_echo "$JOBS" | grep "$pid")
 EOF
       FAILURE=1
     fi
