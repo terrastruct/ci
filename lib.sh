@@ -810,6 +810,16 @@ arch() {
 gh_repo() {
   gh repo view --json nameWithOwner --template '{{ .nameWithOwner }}'
 }
+
+manpath() {
+  if command -v manpath >/dev/null; then
+    command manpath
+  elif man -w 2>/dev/null; then
+    man -w
+  else
+    echo "${MANPATH-}"
+  fi
+}
 #!/bin/sh
 if [ "${LIB_TEST-}" ]; then
   return 0
