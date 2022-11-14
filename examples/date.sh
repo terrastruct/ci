@@ -12,10 +12,14 @@ $0 is an example script demonstrating terrastruct/ci's flag.sh library.
 It defaults to printing the current time in the same format as date(1)
 but it accepts a myraid of flags to control output.
 
-Each argument passed in is interpreted as another time zone in which to format. I've
-included all three types of flags. Flags with no arguments, with optional arguments and
-with required arguments. -- works as you'd expect to prevent parsing of further flags.
-Give it a shot.
+Each argument passed in is interpreted as another time zone in which to format.
+
+I've three types of flags. Flags without arguments, with optional arguments and with
+required non empty arguments.
+
+-- works as you'd expect to prevent parsing of further flags. Give it a shot.
+- is an acceptable argument to a flag and is not parsed as another flag.
+For example --output - will continue to output to stdout as expected.
 
 Flags:
   -h|--help:    show this help
@@ -45,12 +49,7 @@ _date() {
 }
 
 main() {
-  unset FLAG \
-    FLAGRAW \
-    FLAGARG \
-    FLAGSHIFT \
-    DATE_FORMAT \
-    OUTPUT
+  unset DATE_FORMAT OUTPUT
   while :; do
     flag_parse "$@"
     case "$FLAG" in
@@ -58,27 +57,24 @@ main() {
         help
         return 0
         ;;
+      s|short)
+        flag_noarg && shift "$FLAGSHIFT"
+        DATE_FORMAT="%Y-%m-%d"
+        ;;
+      l|long)
+        flag_noarg && shift "$FLAGSHIFT"
+        DATE_FORMAT="%A %B %d %Y %Z"
+        ;;
+      format)
+        flag_nonemptyarg && shift "$FLAGSHIFT"
+        DATE_FORMAT="$FLAGARG"
+        ;;
       o|output)
-        OUTPUT="${FLAGARG:-date-out.txt}"
         shift "$FLAGSHIFT"
+        OUTPUT="${FLAGARG:-date-out.txt}"
         if [ "$OUTPUT" != - ]; then
           exec >"$OUTPUT"
         fi
-        ;;
-      s|short)
-        flag_noarg
-        DATE_FORMAT="%Y-%m-%d"
-        shift "$FLAGSHIFT"
-        ;;
-      l|long)
-        flag_noarg
-        DATE_FORMAT="%A %B %d %Y %Z"
-        shift "$FLAGSHIFT"
-        ;;
-      format)
-        flag_reqarg
-        DATE_FORMAT="$FLAGARG"
-        shift "$FLAGSHIFT"
         ;;
       '')
         shift "$FLAGSHIFT"

@@ -21,6 +21,14 @@ assert() {
   fi
 }
 
+assert_unset() {
+  if [ "$(eval "_echo \"\${$1+x}\"")" = x ]; then
+    eval "got=\$$1"
+    echoerr "expected unset $1 but got: $got"
+    return 1
+  fi
+}
+
 gitdiff_vars() {
   tmpdir="$(mktemp -d)"
   eval "_echo \"\$$1\"" > "$tmpdir/$1"

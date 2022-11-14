@@ -8,12 +8,40 @@ LIB_FLAG=1
 #
 # For a full fledge example see ../examples/date.sh
 #
-# notes:
-# - Always shift with FLAGSHIFT even if FLAG='' indicates no more flags.
-# - If the flag has no argument, remember to add back FLAGARG into $@
-#   and shift one less than FLAGSHIFT.
-# - If a flag always requires an argument, use flag_reqarg.
-# - If a flag does not require an argument, use flag_noarg.
+# It differs from getopts(1) in that long form options are supported. Currently the only
+# deficiency is that short combined options are not supported like -xyzq. That would be
+# interpreted as a single -xyzq flag. The other deficiency is lack of support for short
+# flag syntax like -carg where the arg is not separated from the flag. This one is
+# unfixable I believe unfortunately but for combined short flags I have opened
+# https://github.com/terrastruct/ci/issues/6
+#
+# flag_parse stores state in $FLAG, $FLAGRAW, $FLAGARG and $FLAGSHIFT.
+# FLAG contains the name of the flag without hyphens.
+# FLAGRAW contains the name of the flag as passed in with hyphens.
+# FLAGARG contains the argument for the flag if there was any.
+#   If there was none, it will not be set.
+# FLAGSHIFT contains the number by which the arguments should be shifted to
+#   start at the next flag/argument
+#
+# After each call check $FLAG for the name of the parsed flag.
+# If empty, then no more flags are left.
+# Still, call shift "$FLAGSHIFT" in case there was a --
+#
+# If the argument for the flag is optional, then use ${FLAGARG-} to access
+# the argument if one was passed. Use ${FLAGARG+x} = x to check if it was set.
+# You only need to explicitly check if the flag was set if you care whether the user
+# explicitly passed the empty string as the argument.
+#
+# Otherwise, call one of the flag_*arg functions:
+#
+# If a flag requires an argument, call flag_reqarg
+#   - $FLAGARG is guaranteed to be set after.
+# If a flag requires a non empty argument, call flag_nonemptyarg
+#   - $FLAGARG is guaranteed to be set to a non empty string after.
+# If a flag should not be passed an argument, call flag_noarg
+#   - $FLAGARG is guaranteed to be unset after.
+#
+# And then shift "$FLAGSHIFT"
 flag_parse() {
   case "${1-}" in
     -*=*)
@@ -29,20 +57,20 @@ flag_parse() {
     -)
       FLAG=
       FLAGRAW=
-      FLAGARG=
+      unset FLAGARG
       FLAGSHIFT=0
       ;;
     --)
       FLAG=
       FLAGRAW=
-      FLAGARG=
+      unset FLAGARG
       FLAGSHIFT=1
       ;;
     -*)
       # Remove leading hyphens.
       FLAG="${1#-}"; FLAG="${FLAG#-}"
       FLAGRAW=$1
-      FLAGARG=
+      unset FLAGARG
       FLAGSHIFT=1
       if [ $# -gt 1 ]; then
         case "$2" in
@@ -62,7 +90,7 @@ flag_parse() {
     *)
       FLAG=
       FLAGRAW=
-      FLAGARG=
+      unset FLAGARG
       FLAGSHIFT=0
       ;;
   esac
@@ -70,14 +98,25 @@ flag_parse() {
 }
 
 flag_reqarg() {
-  if [ -z "$FLAGARG" ]; then
+  if [ "${FLAGARG+x}" != x ]; then
     flag_errusage "flag $FLAGRAW requires an argument"
+  fi
+}
+
+flag_nonemptyarg() {
+  flag_reqarg
+  if [ -z "$FLAGARG" ]; then
+    flag_errusage "flag $FLAGRAW requires a non-empty argument"
   fi
 }
 
 flag_noarg() {
   if [ "$FLAGSHIFT" -eq 2 ]; then
+    unset FLAGARG
     FLAGSHIFT=1
+  elif [ "${FLAGARG+x}" = x ]; then
+    # Means an argument was passed via equal sign as in -$FLAG=$FLAGARG
+    flag_errusage "flag $FLAGRAW does not accept an argument"
   fi
 }
 
@@ -207,22 +246,47 @@ LIB_JOB=1
 # and propogating of signals. Not sure how to debug even without something like gdb and
 # going through the source code of the shell too.
 runjob() {(
-  job_name="$1"
+  jobname=$1
+  export JOBNAME=${JOBNAME+$JOBNAME/}$jobname
   shift
   if [ $# -eq 0 ]; then
-    set "$job_name"
+    set "$jobname"
   fi
 
-  if [ -n "${JOB_FILTER-}" ]; then
-    if ! _echo "$job_name" | grep -q "$JOB_FILTER"; then
-      # Skipped.
+  if [ -n "${JOBFILTER-}" ]; then
+    export SKIPDIR="$(mktemp -d)"
+    trap 'rm -rf $SKIPDIR' EXIT
+    # For each slash separated element of $JOBNAME, $JOBFILTER must match at its
+    # corresponding element. In order to facilitate this, we split $JOBFILTER on / and then
+    # reconstruct the regex up to the point of each / and match it against $JOBNAME.
+    # If the constructed regex matches $JOBNAME every iteration until we run out of
+    # elements in $JOBNAME to match against, then the job is not skipped.
+    matches=$(_echo "$JOBNAME" | tr / '\n' | wc -l)
+    i=1
+    _echo "$JOBFILTER" | tr / $'\n' | while read -r regex; do
+      if [ -z "$regex" ]; then
+        regex='[^/]*'
+      fi
+      regex=${prev+$prev/}$regex
+      if ! _echo "$JOBNAME" | grep -q "^$regex"; then
+        touch "$SKIPDIR/skip"
+        return 0
+      fi
+      if [ "$i" -eq "$matches" ]; then
+        return 0
+      fi
+      prev=$regex
+      i=$(( i + 1 ))
+    done
+    if [ -e "$SKIPDIR/skip" ]; then
+      # Skip.
       return 0
     fi
   fi
 
-  COLOR="$(get_rand_color "$job_name")"
-  job_name="$(setaf "$COLOR" "$job_name")"
-  _echo "$job_name^:" "$*"
+  COLOR="$(get_rand_color "$jobname")"
+  jobname="$(setaf "$COLOR" "$jobname")"
+  _echo "$jobname^:" "$*"
 
   # We need to make sure we exit with a non zero exit if the command fails.
   # /bin/sh does not support -o pipefail unfortunately.
@@ -234,12 +298,14 @@ runjob() {(
 
   # We add the prefix to all lines and remove any warning lines about recursive make.
   # We cannot silence these with -s which is unfortunate.
-  sed -e "s#^#$job_name: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
-  sed -e "s#^#$job_name: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
+  sed -e "s#^#$jobname: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
+  sed -e "s#^#$jobname: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
 
   start="$(awk 'BEGIN{srand(); print srand()}')"
   trap runjob_exittrap EXIT
-  eval "$*" >"$stdout" 2>"$stderr"
+  # For some reason without wrapping this in a subshell, the waitjobs in subjob
+  # case_notequal_sign of ./lib/flags_test.sh freezes.
+  ( eval "$*" >"$stdout" 2>"$stderr" )
 )}
 
 runjob_exittrap() {
@@ -249,9 +315,9 @@ runjob_exittrap() {
 
   waitjobs_sigtrap
   if [ "$code" -eq 0 ]; then
-    _echo "$job_name\$:" "$(setaf 2 success)" "($(echo_dur "$dur"))"
+    _echo "$jobname\$:" "$(setaf 2 success)" "($(echo_dur "$dur"))"
   else
-    _echo "$job_name\$:" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
+    _echo "$jobname\$:" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
   fi
   rm -r "$job_tmpdir"
 }
@@ -287,17 +353,19 @@ job_parseflags() {
 
     case "$FLAG" in
       run)
-        flag_reqarg
-        JOB_FILTER="$FLAGARG"
-        shift "$FLAGSHIFT"
+        flag_reqarg && shift "$FLAGSHIFT"
+        export JOBFILTER="$FLAGARG"
         ;;
       h|help)
-      cat <<EOF
+        cat <<EOF
 usage: $0 [--run=jobregex]
 EOF
-      exit 0
-;;
-      "") break ;;
+        exit 0
+        ;;
+      '')
+        shift "$FLAGSHIFT"
+        break
+        ;;
       *)
         flag_errusage "unrecognized flag $RAWFLAG"
         ;;
@@ -678,6 +746,14 @@ assert() {
   if [ "$got" != "$exp" ]; then
     echoerr "unexpected $1"
     gitdiff_vars exp got
+    return 1
+  fi
+}
+
+assert_unset() {
+  if [ "$(eval "_echo \"\${$1+x}\"")" = x ]; then
+    eval "got=\$$1"
+    echoerr "expected unset $1 but got: $got"
     return 1
   fi
 }

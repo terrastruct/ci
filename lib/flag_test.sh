@@ -1,100 +1,234 @@
 #!/bin/sh
 set -eu
 cd -- "$(dirname "$0")"
-. ./flag.sh
 . ./test.sh
+. ./flag.sh
 cd - >/dev/null
 
-case1() {
-  set -- -ok=meow --ok=meow -
-
-  flag_parse "$@"
-  assert FLAG ok
-  assert FLAGARG meow
-  shift "$FLAGSHIFT"
-
-  flag_parse "$@"
-  assert FLAG ok
-  assert FLAGARG meow
-  shift "$FLAGSHIFT"
+assert_term() {
+  args_str="$1"
+  shift
 
   flag_parse "$@"
   assert FLAG ''
-  assert FLAGARG ''
   shift "$FLAGSHIFT"
-
-  assert @ "$*" '-'
+  assert_unset FLAGARG
+  assert @ "$*" "$args_str"
 }
 
-case2() {
-  set -- -m ok --coola joola --
+case_term() {
+  set -- 
+  assert_term '' "$@"
 
+  set -- --
+  assert_term '' "$@"
+
+  set -- --run x - --someflag
   flag_parse "$@"
-  assert FLAG m
-  assert FLAGARG ok
-  shift "$FLAGSHIFT"
+  assert FLAG run
+  flag_reqarg && shift "$FLAGSHIFT"
+  assert FLAGARG x
+  assert_term '- --someflag' "$@"
 
+  set -- --run x -- --someflag
   flag_parse "$@"
-  assert FLAG coola
-  assert FLAGARG joola
-  shift "$FLAGSHIFT"
+  assert FLAG run
+  flag_reqarg && shift "$FLAGSHIFT"
+  assert FLAGARG x
+  assert_term '--someflag' "$@"
 
+  set -- --run x arg --someflag
   flag_parse "$@"
-  assert FLAG ''
-  assert FLAGARG ''
-  shift "$FLAGSHIFT"
-
-  assert @ "$*" ''
+  assert FLAG run
+  flag_reqarg && shift "$FLAGSHIFT"
+  assert FLAGARG x
+  assert_term 'arg --someflag' "$@"
 }
 
-case3() {
-  set -- -m -- - wow lol more args
-
-  flag_parse "$@"
-  assert FLAG m
-  assert FLAGARG ''
-  shift "$FLAGSHIFT"
-
-  assert @ "$*" '-- - wow lol more args'
-}
-
-case4() {
-  set -- -some -
-
-  flag_parse "$@"
-  assert FLAG some
-  assert FLAGARG -
-  shift "$FLAGSHIFT"
-
-  assert @ "$*" ''
-}
-
-case5() {
-  FLAGRAW=-m
-  assert flag_reqarg "$(TERM= flag_reqarg 2>&1)" "err: flag -m requires an argument
-     Run with --help for usage."
-
-  FLAGRAW=--meow
-  assert flag_reqarg "$(TERM= flag_reqarg 2>&1)" "err: flag --meow requires an argument
-     Run with --help for usage."
-}
-
-case6() {
-  set -- -o --long
+case_equal_sign() {
+  set -- -o=meow --o=meow -ok=meow --ok=meow --ok=
 
   flag_parse "$@"
   assert FLAG o
-  assert FLAGARG ''
-  shift "$FLAGSHIFT"
+  flag_reqarg && shift "$FLAGSHIFT"
+  assert FLAGARG meow
 
-  assert @ "$*" '--long'
+  flag_parse "$@"
+  assert FLAG o
+  flag_reqarg && shift "$FLAGSHIFT"
+  assert FLAGARG meow
+
+  flag_parse "$@"
+  assert FLAG ok
+  flag_reqarg && shift "$FLAGSHIFT"
+  assert FLAGARG meow
+
+  flag_parse "$@"
+  assert FLAG ok
+  flag_reqarg && shift "$FLAGSHIFT"
+  assert FLAGARG meow
+
+  flag_parse "$@"
+  assert FLAG ok
+  flag_reqarg && shift "$FLAGSHIFT"
+  assert FLAGARG ''
+
+  assert_term '' "$@"
+}
+
+case_notequal_sign() {
+  case_with_args() {
+    set -- -o meow --o meow -ok meow --ok meow --ok ''
+
+    flag_parse "$@"
+    assert FLAG o
+    flag_reqarg && shift "$FLAGSHIFT"
+    assert FLAGARG meow
+
+    flag_parse "$@"
+    assert FLAG o
+    flag_reqarg && shift "$FLAGSHIFT"
+    assert FLAGARG meow
+
+    flag_parse "$@"
+    assert FLAG ok
+    flag_reqarg && shift "$FLAGSHIFT"
+    assert FLAGARG meow
+
+    flag_parse "$@"
+    assert FLAG ok
+    flag_reqarg && shift "$FLAGSHIFT"
+    assert FLAGARG meow
+
+    flag_parse "$@"
+    assert FLAG ok
+    flag_reqarg && shift "$FLAGSHIFT"
+    assert FLAGARG ''
+
+    assert_term '' "$@"
+  }
+
+  case_without_args() {
+    set -- -o --o -ok --ok
+
+    flag_parse "$@"
+    assert FLAG o
+    shift "$FLAGSHIFT"
+    assert_unset FLAGARG
+
+    flag_parse "$@"
+    assert FLAG o
+    shift "$FLAGSHIFT"
+    assert_unset FLAGARG
+
+    flag_parse "$@"
+    assert FLAG ok
+    shift "$FLAGSHIFT"
+    assert_unset FLAGARG
+
+    flag_parse "$@"
+    assert FLAG ok
+    shift "$FLAGSHIFT"
+    assert_unset FLAGARG
+
+    assert_term '' "$@"
+  }
+
+  case_term() {
+    set -- --out - -x --flag --
+
+    flag_parse "$@"
+    assert FLAG out
+    flag_reqarg && shift "$FLAGSHIFT"
+    assert FLAGARG -
+
+    flag_parse "$@"
+    assert FLAG x
+    shift "$FLAGSHIFT"
+    assert_unset FLAGARG
+
+    flag_parse "$@"
+    assert FLAG flag
+    shift "$FLAGSHIFT"
+    assert_unset FLAGARG
+
+    assert_term '' "$@"
+  }
+
+  runjob case_with_args &
+  runjob case_without_args &
+  runjob case_term &
+  waitjobs
+}
+
+case_reqarg() {
+  set -- -m
+  flag_parse "$@"
+  assert FLAG m
+  assert flag_reqarg "$(TERM= flag_reqarg 2>&1)" "err: flag -m requires an argument
+  Run with --help for usage."
+
+  set -- --meow
+  flag_parse "$@"
+  assert FLAG meow
+  assert flag_reqarg "$(TERM= flag_reqarg 2>&1)" "err: flag --meow requires an argument
+  Run with --help for usage."
+
+  set -- --jingle=''
+  flag_parse "$@"
+  assert FLAG jingle
+  flag_reqarg && shift "$FLAGSHIFT"
+  assert FLAGARG ''
+  assert_term '' "$@"
+}
+
+case_nonemptyarg() {
+  set -- -m
+  flag_parse "$@"
+  assert FLAG m
+  assert flag_nonemptyarg "$(TERM= flag_nonemptyarg 2>&1)" "err: flag -m requires an argument
+  Run with --help for usage."
+
+  set -- --meow
+  flag_parse "$@"
+  assert FLAG meow
+  assert flag_nonemptyarg "$(TERM= flag_nonemptyarg 2>&1)" "err: flag --meow requires an argument
+  Run with --help for usage."
+
+  set -- --jingle=''
+  flag_parse "$@"
+  assert FLAG jingle
+  assert flag_nonemptyarg "$(TERM= flag_nonemptyarg 2>&1)" "err: flag --jingle requires a non-empty argument
+  Run with --help for usage."
+}
+
+case_noarg() {
+  set -- -z -
+  flag_parse "$@"
+  assert FLAG z
+  flag_noarg && shift "$FLAGSHIFT"
+  assert_unset FLAGARG
+  assert_term '-' "$@"
+
+  set -- -z ok
+  flag_parse "$@"
+  assert FLAG z
+  flag_noarg && shift "$FLAGSHIFT"
+  assert_unset FLAGARG
+  assert_term 'ok' "$@"
+
+  set -- -z=ok
+  flag_parse "$@"
+  assert FLAG z
+  assert flag_noarg "$(TERM= flag_noarg 2>&1)" "err: flag -z does not accept an argument
+  Run with --help for usage."
 }
 
 job_parseflags "$@"
-runjob case1 &
-runjob case2 &
-runjob case3 &
-runjob case4 &
-runjob case5 &
-runjob case6 &
+runjob case_term &
+runjob case_equal_sign &
+runjob case_notequal_sign &
+runjob case_reqarg &
+runjob case_nonemptyarg &
+runjob case_noarg &
 waitjobs

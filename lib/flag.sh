@@ -9,12 +9,40 @@ LIB_FLAG=1
 #
 # For a full fledge example see ../examples/date.sh
 #
-# notes:
-# - Always shift with FLAGSHIFT even if FLAG='' indicates no more flags.
-# - If the flag has no argument, remember to add back FLAGARG into $@
-#   and shift one less than FLAGSHIFT.
-# - If a flag always requires an argument, use flag_reqarg.
-# - If a flag does not require an argument, use flag_noarg.
+# It differs from getopts(1) in that long form options are supported. Currently the only
+# deficiency is that short combined options are not supported like -xyzq. That would be
+# interpreted as a single -xyzq flag. The other deficiency is lack of support for short
+# flag syntax like -carg where the arg is not separated from the flag. This one is
+# unfixable I believe unfortunately but for combined short flags I have opened
+# https://github.com/terrastruct/ci/issues/6
+#
+# flag_parse stores state in $FLAG, $FLAGRAW, $FLAGARG and $FLAGSHIFT.
+# FLAG contains the name of the flag without hyphens.
+# FLAGRAW contains the name of the flag as passed in with hyphens.
+# FLAGARG contains the argument for the flag if there was any.
+#   If there was none, it will not be set.
+# FLAGSHIFT contains the number by which the arguments should be shifted to
+#   start at the next flag/argument
+#
+# After each call check $FLAG for the name of the parsed flag.
+# If empty, then no more flags are left.
+# Still, call shift "$FLAGSHIFT" in case there was a --
+#
+# If the argument for the flag is optional, then use ${FLAGARG-} to access
+# the argument if one was passed. Use ${FLAGARG+x} = x to check if it was set.
+# You only need to explicitly check if the flag was set if you care whether the user
+# explicitly passed the empty string as the argument.
+#
+# Otherwise, call one of the flag_*arg functions:
+#
+# If a flag requires an argument, call flag_reqarg
+#   - $FLAGARG is guaranteed to be set after.
+# If a flag requires a non empty argument, call flag_nonemptyarg
+#   - $FLAGARG is guaranteed to be set to a non empty string after.
+# If a flag should not be passed an argument, call flag_noarg
+#   - $FLAGARG is guaranteed to be unset after.
+#
+# And then shift "$FLAGSHIFT"
 flag_parse() {
   case "${1-}" in
     -*=*)
@@ -30,20 +58,20 @@ flag_parse() {
     -)
       FLAG=
       FLAGRAW=
-      FLAGARG=
+      unset FLAGARG
       FLAGSHIFT=0
       ;;
     --)
       FLAG=
       FLAGRAW=
-      FLAGARG=
+      unset FLAGARG
       FLAGSHIFT=1
       ;;
     -*)
       # Remove leading hyphens.
       FLAG="${1#-}"; FLAG="${FLAG#-}"
       FLAGRAW=$1
-      FLAGARG=
+      unset FLAGARG
       FLAGSHIFT=1
       if [ $# -gt 1 ]; then
         case "$2" in
@@ -63,7 +91,7 @@ flag_parse() {
     *)
       FLAG=
       FLAGRAW=
-      FLAGARG=
+      unset FLAGARG
       FLAGSHIFT=0
       ;;
   esac
@@ -71,14 +99,25 @@ flag_parse() {
 }
 
 flag_reqarg() {
-  if [ -z "$FLAGARG" ]; then
+  if [ "${FLAGARG+x}" != x ]; then
     flag_errusage "flag $FLAGRAW requires an argument"
+  fi
+}
+
+flag_nonemptyarg() {
+  flag_reqarg
+  if [ -z "$FLAGARG" ]; then
+    flag_errusage "flag $FLAGRAW requires a non-empty argument"
   fi
 }
 
 flag_noarg() {
   if [ "$FLAGSHIFT" -eq 2 ]; then
+    unset FLAGARG
     FLAGSHIFT=1
+  elif [ "${FLAGARG+x}" = x ]; then
+    # Means an argument was passed via equal sign as in -$FLAG=$FLAGARG
+    flag_errusage "flag $FLAGRAW does not accept an argument"
   fi
 }
 

@@ -15,22 +15,47 @@ LIB_JOB=1
 # and propogating of signals. Not sure how to debug even without something like gdb and
 # going through the source code of the shell too.
 runjob() {(
-  job_name="$1"
+  jobname=$1
+  export JOBNAME=${JOBNAME+$JOBNAME/}$jobname
   shift
   if [ $# -eq 0 ]; then
-    set "$job_name"
+    set "$jobname"
   fi
 
-  if [ -n "${JOB_FILTER-}" ]; then
-    if ! _echo "$job_name" | grep -q "$JOB_FILTER"; then
-      # Skipped.
+  if [ -n "${JOBFILTER-}" ]; then
+    export SKIPDIR="$(mktemp -d)"
+    trap 'rm -rf $SKIPDIR' EXIT
+    # For each slash separated element of $JOBNAME, $JOBFILTER must match at its
+    # corresponding element. In order to facilitate this, we split $JOBFILTER on / and then
+    # reconstruct the regex up to the point of each / and match it against $JOBNAME.
+    # If the constructed regex matches $JOBNAME every iteration until we run out of
+    # elements in $JOBNAME to match against, then the job is not skipped.
+    matches=$(_echo "$JOBNAME" | tr / '\n' | wc -l)
+    i=1
+    _echo "$JOBFILTER" | tr / $'\n' | while read -r regex; do
+      if [ -z "$regex" ]; then
+        regex='[^/]*'
+      fi
+      regex=${prev+$prev/}$regex
+      if ! _echo "$JOBNAME" | grep -q "^$regex"; then
+        touch "$SKIPDIR/skip"
+        return 0
+      fi
+      if [ "$i" -eq "$matches" ]; then
+        return 0
+      fi
+      prev=$regex
+      i=$(( i + 1 ))
+    done
+    if [ -e "$SKIPDIR/skip" ]; then
+      # Skip.
       return 0
     fi
   fi
 
-  COLOR="$(get_rand_color "$job_name")"
-  job_name="$(setaf "$COLOR" "$job_name")"
-  _echo "$job_name^:" "$*"
+  COLOR="$(get_rand_color "$jobname")"
+  jobname="$(setaf "$COLOR" "$jobname")"
+  _echo "$jobname^:" "$*"
 
   # We need to make sure we exit with a non zero exit if the command fails.
   # /bin/sh does not support -o pipefail unfortunately.
@@ -42,12 +67,14 @@ runjob() {(
 
   # We add the prefix to all lines and remove any warning lines about recursive make.
   # We cannot silence these with -s which is unfortunate.
-  sed -e "s#^#$job_name: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
-  sed -e "s#^#$job_name: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
+  sed -e "s#^#$jobname: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
+  sed -e "s#^#$jobname: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
 
   start="$(awk 'BEGIN{srand(); print srand()}')"
   trap runjob_exittrap EXIT
-  eval "$*" >"$stdout" 2>"$stderr"
+  # For some reason without wrapping this in a subshell, the waitjobs in subjob
+  # case_notequal_sign of ./lib/flags_test.sh freezes.
+  ( eval "$*" >"$stdout" 2>"$stderr" )
 )}
 
 runjob_exittrap() {
@@ -57,9 +84,9 @@ runjob_exittrap() {
 
   waitjobs_sigtrap
   if [ "$code" -eq 0 ]; then
-    _echo "$job_name\$:" "$(setaf 2 success)" "($(echo_dur "$dur"))"
+    _echo "$jobname\$:" "$(setaf 2 success)" "($(echo_dur "$dur"))"
   else
-    _echo "$job_name\$:" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
+    _echo "$jobname\$:" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
   fi
   rm -r "$job_tmpdir"
 }
@@ -95,17 +122,19 @@ job_parseflags() {
 
     case "$FLAG" in
       run)
-        flag_reqarg
-        JOB_FILTER="$FLAGARG"
-        shift "$FLAGSHIFT"
+        flag_reqarg && shift "$FLAGSHIFT"
+        export JOBFILTER="$FLAGARG"
         ;;
       h|help)
-      cat <<EOF
+        cat <<EOF
 usage: $0 [--run=jobregex]
 EOF
-      exit 0
-;;
-      "") break ;;
+        exit 0
+        ;;
+      '')
+        shift "$FLAGSHIFT"
+        break
+        ;;
       *)
         flag_errusage "unrecognized flag $RAWFLAG"
         ;;

@@ -2,6 +2,7 @@
 set -eu
 cd -- "$(dirname "$0")"
 . ./test.sh
+. ./log.sh
 cd - >/dev/null
 
 case1() {
@@ -19,7 +20,7 @@ EOF
   case2_exp() {
     cat <<EOF
 err: It runs like x, where x is something unsavory yuppers.
-     All the system's paths must be topologically and circularly interrelated for.
+  All the system's paths must be topologically and circularly interrelated for.
 EOF
   }
   # heredoc directly inside a command substitution isn't allowed.
