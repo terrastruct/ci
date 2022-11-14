@@ -224,6 +224,36 @@ case_noarg() {
   Run with --help for usage."
 }
 
+case_flag_fmt() {
+  set -- -s --s -s= -long --long --long=
+
+  flag_parse "$@"
+  assert FLAGRAW -s
+  shift "$FLAGSHIFT"
+
+  flag_parse "$@"
+  assert FLAGRAW -s
+  shift "$FLAGSHIFT"
+
+  flag_parse "$@"
+  assert FLAGRAW -s
+  shift "$FLAGSHIFT"
+
+  flag_parse "$@"
+  assert FLAGRAW --long
+  shift "$FLAGSHIFT"
+
+  flag_parse "$@"
+  assert FLAGRAW --long
+  shift "$FLAGSHIFT"
+
+  flag_parse "$@"
+  assert FLAGRAW --long
+  shift "$FLAGSHIFT"
+
+  assert_term '' "$@"
+}
+
 job_parseflags "$@"
 runjob case_term &
 runjob case_equal_sign &
@@ -231,4 +261,5 @@ runjob case_notequal_sign &
 runjob case_reqarg &
 runjob case_nonemptyarg &
 runjob case_noarg &
+runjob case_flag_fmt &
 waitjobs

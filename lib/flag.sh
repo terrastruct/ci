@@ -48,9 +48,9 @@ flag_parse() {
     -*=*)
       # Remove everything after first equal sign.
       FLAG="${1%%=*}"
-      FLAGRAW="$FLAG"
       # Remove leading hyphens.
       FLAG="${FLAG#-}"; FLAG="${FLAG#-}"
+      FLAGRAW="$(flag_fmt)"
       # Remove everything before first equal sign.
       FLAGARG="${1#*=}"
       FLAGSHIFT=1
@@ -70,7 +70,7 @@ flag_parse() {
     -*)
       # Remove leading hyphens.
       FLAG="${1#-}"; FLAG="${FLAG#-}"
-      FLAGRAW=$1
+      FLAGRAW=$(flag_fmt)
       unset FLAGARG
       FLAGSHIFT=1
       if [ $# -gt 1 ]; then
@@ -127,4 +127,12 @@ $1
 Run with --help for usage.
 EOF
   return 1
+}
+
+flag_fmt() {
+  if [ "$(printf %s "$FLAG" | wc -c)" -eq 1 ]; then
+    echo "-$FLAG"
+  else
+    echo "--$FLAG"
+  fi
 }
