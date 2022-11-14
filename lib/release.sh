@@ -29,3 +29,7 @@ arch() {
     *) echo "$uname_m" ;;
   esac
 }
+
+gh_repo() {
+  gh repo view --json nameWithOwner --template '{{ .nameWithOwner }}'
+}
