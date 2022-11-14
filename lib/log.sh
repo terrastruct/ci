@@ -114,6 +114,14 @@ logcat() {
   COLOR=5 catp log "$@" >&2
 }
 
+warn() {
+  COLOR=3 logp warn "$@"
+}
+
+warnf() {
+  COLOR=3 logfp warn "$@"
+}
+
 sh_c() {
   COLOR=3 logp exec "$*"
   if [ -z "${DRYRUN-}" ]; then

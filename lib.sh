@@ -491,6 +491,14 @@ logcat() {
   COLOR=5 catp log "$@" >&2
 }
 
+warn() {
+  COLOR=3 logp warn "$@"
+}
+
+warnf() {
+  COLOR=3 logfp warn "$@"
+}
+
 sh_c() {
   COLOR=3 logp exec "$*"
   if [ -z "${DRYRUN-}" ]; then
@@ -618,6 +626,25 @@ goos() {
   case $1 in
     macos) _echo darwin ;;
     *) _echo $1 ;;
+  esac
+}
+
+os() {
+  uname="$(uname)"
+  case $uname in
+    Linux) echo linux ;;
+    Darwin) echo macos ;;
+    FreeBSD) echo freebsd ;;
+    *) echo "$uname" ;;
+  esac
+}
+
+arch() {
+  uname_m=$(uname -m)
+  case $uname_m in
+    aarch64) echo arm64 ;;
+    x86_64) echo amd64 ;;
+    *) echo "$uname_m" ;;
   esac
 }
 

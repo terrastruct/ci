@@ -12,6 +12,25 @@ goos() {
   esac
 }
 
+os() {
+  uname="$(uname)"
+  case $uname in
+    Linux) echo linux ;;
+    Darwin) echo macos ;;
+    FreeBSD) echo freebsd ;;
+    *) echo "$uname" ;;
+  esac
+}
+
+arch() {
+  uname_m=$(uname -m)
+  case $uname_m in
+    aarch64) echo arm64 ;;
+    x86_64) echo amd64 ;;
+    *) echo "$uname_m" ;;
+  esac
+}
+
 aws() {
   # Without the redirection aws's cli will write directly to /dev/tty bypassing prefix.
   command aws "$@" > /dev/stdout
