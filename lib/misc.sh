@@ -11,3 +11,8 @@ goos() {
     *) _echo $1 ;;
   esac
 }
+
+aws() {
+  # Without the redirection aws's cli will write directly to /dev/tty bypassing prefix.
+  command aws "$@" > /dev/stdout
+}

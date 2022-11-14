@@ -221,7 +221,6 @@ runjob() {(
   fi
 
   COLOR="$(get_rand_color "$job_name")"
-  _job_name="$job_name"
   job_name="$(setaf "$COLOR" "$job_name")"
   _echo "$job_name^:" "$*"
 
@@ -285,14 +284,18 @@ waitjobs_sigtrap() {
 job_parseflags() {
   while :; do
     flag_parse "$@"
-    shift "$FLAGSHIFT"
 
     case "$FLAG" in
-      run) JOB_FILTER="$FLAGARG" ;;
-      h|help) cat <<EOF
+      run)
+        flag_reqarg
+        JOB_FILTER="$FLAGARG"
+        shift "$FLAGSHIFT"
+        ;;
+      h|help)
+      cat <<EOF
 usage: $0 [--run=jobregex]
 EOF
-exit 0
+      exit 0
 ;;
       "") break ;;
       *)
@@ -423,7 +426,7 @@ logcat() {
 sh_c() {
   COLOR=3 logp exec "$*"
   if [ -z "${DRYRUN-}" ]; then
-    "$@"
+    eval "$@"
   fi
 }
 
@@ -479,12 +482,8 @@ runtty() {
       ;;
     *)
       echoerr "runtty: unsupported OS $(uname)"
+      return 1
   esac
-}
-
-aws() {
-  # Without the redirection aws's cli will write directly to /dev/tty bypassing prefix.
-  command aws "$@" > /dev/stdout
 }
 #!/bin/sh
 if [ "${LIB_MAKE-}" ]; then
@@ -552,6 +551,11 @@ goos() {
     macos) _echo darwin ;;
     *) _echo $1 ;;
   esac
+}
+
+aws() {
+  # Without the redirection aws's cli will write directly to /dev/tty bypassing prefix.
+  command aws "$@" > /dev/stdout
 }
 #!/bin/sh
 if [ "${LIB_NOTIFY-}" ]; then

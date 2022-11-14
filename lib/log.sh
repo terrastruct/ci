@@ -117,7 +117,7 @@ logcat() {
 sh_c() {
   COLOR=3 logp exec "$*"
   if [ -z "${DRYRUN-}" ]; then
-    "$@"
+    eval "$@"
   fi
 }
 
@@ -173,10 +173,6 @@ runtty() {
       ;;
     *)
       echoerr "runtty: unsupported OS $(uname)"
+      return 1
   esac
-}
-
-aws() {
-  # Without the redirection aws's cli will write directly to /dev/tty bypassing prefix.
-  command aws "$@" > /dev/stdout
 }
