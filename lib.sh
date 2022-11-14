@@ -764,6 +764,11 @@ rand() {
 }
 
 pick() {
+  if ! command -v shuf >/dev/null || ! command -v md5sum >/dev/null; then
+    eval "_echo \"\$3\""
+    return
+  fi
+
   seed="$1"
   shift
   i="$(rand "$seed" "1-$#")"
