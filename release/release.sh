@@ -253,7 +253,7 @@ _6_ensure_release() {
 _7_ensure_pr() {
   # We do not use gh pr view as that includes closed PRs.
   pr_url="$(gh pr list --head "$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
-  body="Will be available at $(gh repo view --json=url '--template={{ .url }}')/releases/tag/$VERSION"
+  body="Will be available at $(cd "$REPO_DIR" && gh repo view --json=url '--template={{ .url }}')/releases/tag/$VERSION"
   if [ -n "$pr_url" ]; then
     pr_url=$(sh_c gh pr edit --body "'$body'" "$VERSION" | tee /dev/stderr)
     return 0
@@ -261,10 +261,10 @@ _7_ensure_pr() {
 
   pr_url="$(sh_c gh pr create --repo "$REPO" --fill --body "'$body'" | tee /dev/stderr)"
 
-  _7_ensure_pr_repo
+  _7_ensure_pr_repodir
 }
 
-_7_ensure_pr_repo() {
+_7_ensure_pr_repodir() {
   if [ "$REPO_DIR" == . ]; then
     return 0
   fi
