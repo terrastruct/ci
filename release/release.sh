@@ -135,10 +135,10 @@ EOF
 }
 
 _1_ensure_branch() {
-  # if [ -z "$(git branch --list "$VERSION")" ]; then
-  #   sh_c git branch "$VERSION" master
-  # fi
-  # sh_c git checkout -q "$VERSION"
+  if [ -z "$(git branch --list "$VERSION")" ]; then
+    sh_c git branch "$VERSION" master
+  fi
+  sh_c git checkout -q "$VERSION"
   _1_ensure_branch_repodir
 }
 
@@ -179,12 +179,12 @@ _2_ensure_changelogs_repodir() {
 }
 
 _3_ensure_commit() {
-  # sh_c git add --all
-  # if [ "$(git show --no-patch --format=%s)" = "$VERSION" ]; then
-  #   sh_c git commit --allow-empty --amend --no-edit
-  # else
-  #   sh_c git commit --allow-empty -m "$VERSION"
-  # fi
+  sh_c git add --all
+  if [ "$(git show --no-patch --format=%s)" = "$VERSION" ]; then
+    sh_c git commit --allow-empty --amend --no-edit
+  else
+    sh_c git commit --allow-empty -m "$VERSION"
+  fi
   _3_ensure_commit_repodir
 }
 
