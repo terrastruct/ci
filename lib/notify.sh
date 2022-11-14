@@ -80,5 +80,5 @@ $emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
     json="{\"text\":$(printf %s "$msg" | jq -sR .)}"
     url="$SLACK_WEBHOOK_URL"
   fi
-  sh_c curl -fsSL -X POST -H 'Content-type: application/json' --data "$json" "$url" > /dev/null
+  sh_c curl -fsSL -X POST -H 'Content-type: application/json' --data "'$json'" "$url" > /dev/null
 }
