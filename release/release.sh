@@ -64,6 +64,11 @@ EOF
 }
 
 main() {
+  if [ -z "${REPO-}" ]; then
+    REPO=$(gh_repo)
+    REPO_DIR=.
+  fi
+
   while :; do
     flag_parse "$@"
     case "$FLAG" in
@@ -111,10 +116,7 @@ main() {
     exit 1
   fi
 
-  if [ -z "${REPO-}" ]; then
-    REPO=$(gh_repo)
-    REPO_DIR=.
-  else
+  if [ -z "${REPO_DIR-}" ]; then
     # Releases must be published onto a different repo than the one in which we currently
     # are.
     REPO_DIR="$HOME/.cache/tstruct/release/repo/$REPO"
