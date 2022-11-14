@@ -5,10 +5,6 @@ fi
 LIB_LOG=1
 . ./rand.sh
 
-command_exists() {
-  command -v "$@" >/dev/null
-}
-
 tput() {
   if [ -n "$TERM" ]; then
     command tput "$@"
@@ -130,12 +126,12 @@ sh_c() {
 sudo_sh_c() {
   if [ "$(id -u)" -eq 0 ]; then
     sh_c "$@"
-  # elif command_exists doas; then
-  #   sh_c "doas $*"
-  # elif command_exists sudo; then
-  #   sh_c "sudo $*"
-  # elif command_exists su; then
-  #   sh_c "su root -c '$*'"
+  elif command -v doas >/dev/null; then
+    sh_c "doas $*"
+  elif command -v sudo >/dev/null; then
+    sh_c "sudo $*"
+  elif command -v su >/dev/null; then
+    sh_c "su root -c '$*'"
   else
     caterr <<EOF
 This script needs to run the following command as root:
