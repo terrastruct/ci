@@ -5,6 +5,10 @@ fi
 LIB_LOG=1
 . ./rand.sh
 
+if [ -n "${DEBUG-}" ]; then
+  set -x
+fi
+
 tput() {
   if [ -n "$TERM" ]; then
     command tput "$@"
