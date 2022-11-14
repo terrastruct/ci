@@ -223,7 +223,6 @@ _6_ensure_release() {
   release_url="$(gh release view --repo "$REPO" "$VERSION" --json=url '--template={{ .url }}' 2>/dev/null || true)"
   if [ -n "$release_url" ]; then
     release_url="$(sh_c gh release edit --repo "$REPO" \
-      --draft \
       --notes-file "./ci/release/changelogs/$VERSION.md" \
       ${PRERELEASE:+--prerelease} \
       "--title=$VERSION" \
@@ -243,7 +242,7 @@ _7_ensure_pr() {
   pr_url="$(gh pr list --repo "$REPO" --head "$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
   body="Will be available at $(cd "$REPO_DIR" && gh repo view --json=url '--template={{ .url }}')/releases/tag/$VERSION"
   if [ -n "$pr_url" ]; then
-    sh_c gh pr edit --repo "$REPO" --body "$body" "$VERSION"
+    sh_c gh pr edit --repo "$REPO" --body "'$body'" "$VERSION"
     return 0
   fi
 
