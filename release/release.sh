@@ -215,7 +215,6 @@ _3_ensure_commit_repodir() {
 
 _4_push_branch() {
   sh_c git push -f origin "refs/heads/$VERSION"
-  sh_c git push origin master:master
   _4_push_branch_repodir
 }
 
