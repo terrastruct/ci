@@ -11,6 +11,7 @@ if [ -n "${CI-}" ]; then
   fi
 fi
 
+sh_c chmod +w lib.sh
 sh_c \>lib.sh
 find lib -name '*.sh' ! -name '*_test.sh' | sort | while read fname; do
   # Remove lines for sourcing dependency lib/*.sh files as all files are bundled into
@@ -18,6 +19,7 @@ find lib -name '*.sh' ! -name '*_test.sh' | sort | while read fname; do
   # when distributing just lib.sh and so sourcing will fail anyway.
   sh_c sed '"/^\. /d"' "$fname" \>\> lib.sh
 done
+sh_c chmod -w lib.sh
 
 if [ -n "${CI-}" ]; then
   git_assert_clean
