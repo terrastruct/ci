@@ -800,6 +800,10 @@ arch() {
     *) echo "$uname_m" ;;
   esac
 }
+
+gh_repo() {
+  gh repo view --json nameWithOwner --template '{{ .nameWithOwner }}'
+}
 #!/bin/sh
 if [ "${LIB_TEST-}" ]; then
   return 0
