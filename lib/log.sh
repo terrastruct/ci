@@ -146,12 +146,13 @@ header() {
   logp "/* $1 */"
 }
 
-# humanpath replaces all occurrences of $HOME with ~
+# humanpath replaces all occurrences of " $HOME" with " ~"
+# and all occurrences of '"$HOME' with the literal '"$HOME'.
 humanpath() {
   if [ -z "${HOME-}" ]; then
     cat
   else
-    sed "s#$HOME#~#g"
+    sed -e "s# $HOME# ~#g" -e "s#\"$HOME#\"\$HOME#g"
   fi
 }
 
