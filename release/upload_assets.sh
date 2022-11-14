@@ -4,7 +4,7 @@ set -eu
 
 help() {
   cat <<EOF
-usage: $0 <version>
+usage: $0 --version=<version>
 
 Uploads the assets for release <version> to GitHub.
 
@@ -12,7 +12,7 @@ For example, if <version> is v0.0.99 then it uploads files matching
 ./ci/release/build/v0.0.99/*.tar.gz to the GitHub release v0.0.99.
 
 Example:
-  $0 v0.0.99
+  $0 --version=v0.0.99
 EOF
 }
 
@@ -24,6 +24,10 @@ main() {
         help
         return 0
         ;;
+      version)
+        flag_nonemptyarg && shift "$FLAGSHIFT"
+        VERSION=$FLAGARG
+        ;;
       '')
         shift "$FLAGSHIFT"
         break
@@ -34,11 +38,11 @@ main() {
     esac
   done
 
-  if [ $# -ne 1 ]; then
-    flag_errusage "first argument must be release version like v0.0.99"
+  VERSION=${VERSION:-$(git describe 2>/dev/null)}
+  if [ -z "${VERSION-}" ]; then
+    echoerr "no --version passed and unable to determine version from git describe"
+    exit 1
   fi
-  VERSION="$1"
-  shift
 
   sh_c gh release upload "${REPO+"-R \"$REPO\""}" --clobber "$VERSION" "./ci/release/build/$VERSION"/*.tar.gz
 }

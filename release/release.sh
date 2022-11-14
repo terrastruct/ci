@@ -59,7 +59,7 @@ it. Then the PR, tag and draft release will be generated against said throwaway
 repository.
 
 Example:
-  $0 v0.0.99
+  $0 --version=v0.0.99
 EOF
 }
 
@@ -284,11 +284,11 @@ _8_ensure_assets() {
     warn "skipping building of assets due to --skip-build"
     return 0
   fi
-  sh_c ./ci/release/build.sh ${REBUILD:+--rebuild} --version "$VERSION"
+  sh_c ./ci/release/build.sh ${REBUILD:+--rebuild} --version="$VERSION"
 }
 
 _9_upload_assets() {
-  REPO=$REPO "$(dirname "$0")/upload_assets.sh" "$VERSION"
+  REPO=$REPO "$(dirname "$0")/upload_assets.sh" --version="$VERSION"
 }
 
 main "$@"
