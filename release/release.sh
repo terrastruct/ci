@@ -124,6 +124,13 @@ main() {
     echoerr "no --version passed and unable to determine version from git describe"
     exit 1
   fi
+  case $VERSION in
+    v*) ;;
+    *)
+      echoerr "--version must start with v"
+      exit 1
+      ;;
+  esac
 
   if [ -z "${REPO_DIR-}" ]; then
     # Releases must be published onto a different repo than the one in which we currently
