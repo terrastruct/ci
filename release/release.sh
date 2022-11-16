@@ -280,6 +280,7 @@ _7_ensure_pr() {
   body="Will be available at $(cd "$REPO_DIR" && gh repo view --json=url '--template={{ .url }}')/releases/tag/$VERSION"
   if [ -n "$pr_url" ]; then
     pr_url=$(sh_c gh pr edit --body "'$body'" "$VERSION" | tee /dev/stderr)
+    _7_ensure_pr_repodir
     return 0
   fi
 
