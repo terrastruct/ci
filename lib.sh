@@ -387,8 +387,8 @@ EOF
 
 lockfile() {
   LOCKFILE=$1
-  LOCKFILE_PID=$LOCKFILE.$$
-  echo "pid: $$" > $LOCKFILE_PID
+  LOCKFILE_PID=$(mktemp)
+  echo "pid $$" > $LOCKFILE_PID
   if ln "$LOCKFILE_PID" "$LOCKFILE"; then
     return 0
   else
@@ -406,11 +406,13 @@ unlockfile() {
 lockfile_ssh() {
   LOCKHOST=$1
   LOCKFILE=$2
-  LOCKFILE_PID=$LOCKFILE.$$
-  ssh "$LOCKHOST" echo "ssh: $USER@$LOCKHOST" \> $LOCKFILE_PID
-  if ssh "$LOCKHOST" ln "$LOCKFILE_PID" "$LOCKFILE"; then
-    return 0
-  else
+  LOCKFILE_PID=$(ssh "$LOCKHOST" mktemp)
+  ssh "$LOCKHOST" echo "ssh $USER@$(hostname)" \> "$LOCKFILE_PID"
+  set +e
+  ssh "$LOCKHOST" ln "$LOCKFILE_PID" "$LOCKFILE"
+  code=$?
+  set -e
+  if [ $code -ne 0 ]; then
     echoerr "$LOCKFILE locked by $(ssh "$LOCKHOST" cat "$LOCKFILE")"
     ssh "$LOCKHOST" rm "$LOCKFILE_PID"
     exit 1
