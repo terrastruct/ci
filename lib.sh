@@ -440,7 +440,7 @@ if [ -n "${DEBUG-}" ]; then
 fi
 
 tput() {
-  if [ -n "$TERM" ]; then
+  if [ -n "${COLOR-}" -o -t 1 ]; then
     command tput "$@"
   fi
 }
