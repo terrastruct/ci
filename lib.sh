@@ -708,10 +708,11 @@ aws() {
 }
 
 docker_run() {
-  sh_c docker run -it --rm \
+  sh_c docker run --rm \
     -v "$HOME:$HOME" \
     -w "$HOME" \
     -e HOME \
+    -e TERM \
     -u "$(id -u):$(id -g)" \
     "$@"
 }
