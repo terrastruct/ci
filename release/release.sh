@@ -180,7 +180,17 @@ _1_ensure_branch() {
   if [ -z "$(git branch --list "$VERSION")" ]; then
     sh_c git branch "$VERSION" master
   fi
-  sh_c git checkout -q "$VERSION"
+
+  STASHED=
+  if [ -n "$(git commit --short)" ]; then
+    sh_c git stash
+    STASHED=1
+  fi
+  sh_c git checkout "$VERSION"
+  if [ -n "${STASHED-}" ]; then
+    sh_c git stash pop
+  fi
+
   _1_ensure_branch_repodir
 }
 
@@ -191,7 +201,16 @@ _1_ensure_branch_repodir() {
   if [ -z "$(git -C "$REPO_DIR" branch --list "$VERSION")" ]; then
     sh_c git -C "$REPO_DIR" branch "$VERSION" master
   fi
-  sh_c git -C "$REPO_DIR" checkout -q "$VERSION"
+
+  STASHED=
+  if [ -n "$(git -C "$REPO_DIR" commit --short)" ]; then
+    sh_c git -C "$REPO_DIR" stash
+    STASHED=1
+  fi
+  sh_c git -C "$REPO_DIR" checkout "$VERSION"
+  if [ -n "${STASHED-}" ]; then
+    sh_c git -C "$REPO_DIR" stash pop
+  fi
 }
 
 _2_ensure_changelog() {
