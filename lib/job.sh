@@ -146,6 +146,7 @@ EOF
   fi
 }
 
+# See https://unix.stackexchange.com/questions/22044/correct-locking-in-shell-scripts
 lockfile() {
   LOCKFILE=$1
   LOCKFILE_PID=$(mktemp)
