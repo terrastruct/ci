@@ -280,7 +280,7 @@ _7_ensure_pr() {
     return 0
   fi
 
-  pr_url="$(sh_c gh pr create --repo "$REPO" --fill --body "'$body'" | tee /dev/stderr)"
+  pr_url="$(sh_c gh pr create --fill --body "'$body'" | tee /dev/stderr)"
 
   _7_ensure_pr_repodir
 }
