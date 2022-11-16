@@ -9,9 +9,19 @@ if [ -n "${DEBUG-}" ]; then
   set -x
 fi
 
+if ! [ "${COLOR-}" = 0 -o "${COLOR-}" = false ]; then
+  if [ "${COLOR-}" = 1 -o "${COLOR-}" = true -o -t 1 ]; then
+    _COLOR=1
+  fi
+fi
+
 tput() {
-  if [ -n "${COLOR-}" -o -t 1 ]; then
-    command tput "$@"
+  if [ "${COLOR-}" = 0 -o "${COLOR-}" = false ]; then
+    return 0
+  fi
+
+  if [ "${COLOR-}" = 1 -o "${COLOR-}" = true -o -t 1 ]; then
+    TERM=${TERM:-xterm-256color} command tput "$@"
   fi
 }
 
@@ -48,10 +58,10 @@ printfp() {(
   prefix="$1"
   shift
 
-  if [ -z "${COLOR:-}" ]; then
-    COLOR="$(get_rand_color "$prefix")"
+  if [ -z "${FGCOLOR:-}" ]; then
+    FGCOLOR="$(get_rand_color "$prefix")"
   fi
-  printf '%s' "$(setaf "$COLOR" "$prefix")"
+  printf '%s' "$(setaf "$FGCOLOR" "$prefix")"
 
   if [ $# -gt 0 ]; then
     printf ': '
@@ -77,15 +87,15 @@ strlen() {
 }
 
 echoerr() {
-  COLOR=1 echop err "$*" | humanpath>&2
+  FGCOLOR=1 echop err "$*" | humanpath>&2
 }
 
 caterr() {
-  COLOR=1 catp err "$@" | humanpath >&2
+  FGCOLOR=1 catp err "$@" | humanpath >&2
 }
 
 printferr() {
-  COLOR=1 printfp err "$@" | humanpath >&2
+  FGCOLOR=1 printfp err "$@" | humanpath >&2
 }
 
 logp() {
@@ -101,27 +111,27 @@ logpcat() {
 }
 
 log() {
-  COLOR=5 logp log "$@"
+  FGCOLOR=5 logp log "$@"
 }
 
 logf() {
-  COLOR=5 logfp log "$@"
+  FGCOLOR=5 logfp log "$@"
 }
 
 logcat() {
-  COLOR=5 logpcat log "$@"
+  FGCOLOR=5 logpcat log "$@"
 }
 
 warn() {
-  COLOR=3 logp warn "$@"
+  FGCOLOR=3 logp warn "$@"
 }
 
 warnf() {
-  COLOR=3 logfp warn "$@"
+  FGCOLOR=3 logfp warn "$@"
 }
 
 sh_c() {
-  COLOR=3 logp exec "$*"
+  FGCOLOR=3 logp exec "$*"
   if [ -z "${DRY_RUN-}" ]; then
     eval "$@"
   fi

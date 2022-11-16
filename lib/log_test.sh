@@ -6,13 +6,13 @@ cd -- "$(dirname "$0")"
 cd - >/dev/null
 
 case1() {
-  got=$(TERM= echoerr "It's hard to be humble when you're perfect." 2>&1)
+  got=$(COLOR=0 echoerr "It's hard to be humble when you're perfect." 2>&1)
   assert got "err: It's hard to be humble when you're perfect."
 }
 
 case2() {
   case2_got() {
-    TERM= caterr 2>&1 <<EOF
+    COLOR=0 caterr 2>&1 <<EOF
 It runs like x, where x is something unsavory yuppers.
 All the system's paths must be topologically and circularly interrelated for.
 EOF

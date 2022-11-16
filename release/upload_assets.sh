@@ -17,8 +17,7 @@ EOF
 }
 
 main() {
-  while :; do
-    flag_parse "$@"
+  while flag_parse "$@"; do
     case "$FLAG" in
       h|help)
         help
@@ -28,15 +27,12 @@ main() {
         flag_nonemptyarg && shift "$FLAGSHIFT"
         VERSION=$FLAGARG
         ;;
-      '')
-        shift "$FLAGSHIFT"
-        break
-        ;;
       *)
         flag_errusage "unrecognized flag $FLAGRAW"
         ;;
     esac
   done
+  shift "$FLAGSHIFT"
 
   VERSION=${VERSION:-$(git describe 2>/dev/null)}
   if [ -z "${VERSION-}" ]; then

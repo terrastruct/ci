@@ -47,10 +47,10 @@ gitdiff() {(
   mkfifo "$tmpdir/fifo"
   cat "$tmpdir/fifo" | diff-highlight | tail -n +3 &
   trap waitjobs EXIT
-  # 1. If TERM is set we want colors regardless of if output is a TTY.
+  # 1. If _COLOR is set we want colors.
   # 2. Use the best diff algorithm.
   # 3. Highlight trailing whitespace.
-  GIT_CONFIG_NOSYSTEM=1 HOME= git ${TERM:+-c color.diff=always} diff \
+  GIT_CONFIG_NOSYSTEM=1 HOME= git ${_COLOR:+-c color.diff=always} diff \
     --diff-algorithm=histogram \
     --ws-error-highlight=all \
     --no-index "$@" >"$tmpdir/fifo"

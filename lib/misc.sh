@@ -16,6 +16,8 @@ docker_run() {
     -w "$HOME" \
     -e HOME \
     -e TERM \
+    -e COLOR \
+    -e _COLOR \
     -u "$(id -u):$(id -g)" \
     "$@"
 }

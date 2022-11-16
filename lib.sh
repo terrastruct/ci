@@ -23,9 +23,8 @@ LIB_FLAG=1
 # FLAGSHIFT contains the number by which the arguments should be shifted to
 #   start at the next flag/argument
 #
-# After each call check $FLAG for the name of the parsed flag.
-# If empty, then no more flags are left.
-# Still, call shift "$FLAGSHIFT" in case there was a --
+# flag_parse exits with a non zero code when there are no more flags
+# to be parsed. Still, call shift "$FLAGSHIFT" in case there was a --
 #
 # If the argument for the flag is optional, then use ${FLAGARG-} to access
 # the argument if one was passed. Use ${FLAGARG+x} = x to check if it was set.
@@ -53,18 +52,15 @@ flag_parse() {
       # Remove everything before first equal sign.
       FLAGARG="${1#*=}"
       FLAGSHIFT=1
+      return 0
       ;;
     -)
-      FLAG=
-      FLAGRAW=
-      unset FLAGARG
       FLAGSHIFT=0
+      return 1
       ;;
     --)
-      FLAG=
-      FLAGRAW=
-      unset FLAGARG
       FLAGSHIFT=1
+      return 1
       ;;
     -*)
       # Remove leading hyphens.
@@ -86,15 +82,13 @@ flag_parse() {
             ;;
         esac
       fi
+      return 0
       ;;
     *)
-      FLAG=
-      FLAGRAW=
-      unset FLAGARG
       FLAGSHIFT=0
+      return 1
       ;;
   esac
-  return 0
 }
 
 flag_reqarg() {
@@ -195,7 +189,7 @@ set_changed_files() {
 }
 
 git_assert_clean() {
-  git ${TERM:+-c color.diff=always} diff --exit-code
+  git ${_COLOR:+-c color.diff=always} diff --exit-code
 }
 
 filter_exists() {
@@ -292,8 +286,15 @@ runjob() {(
     fi
   fi
 
-  COLOR="$(get_rand_color "$jobname")"
-  jobname="$(setaf "$COLOR" "$jobname")"
+  if [ -z "${COLOR-}" ]; then
+    if [ -t 1 ]; then
+      export COLOR=1
+    else
+      export COLOR=0
+    fi
+  fi
+  FGCOLOR="$(get_rand_color "$jobname")"
+  jobname="$(setaf "$FGCOLOR" "$jobname")"
   _echo "$jobname^:" "$*"
 
   # We need to make sure we exit with a non zero exit if the command fails.
@@ -356,9 +357,7 @@ waitjobs_sigtrap() {
 }
 
 job_parseflags() {
-  while :; do
-    flag_parse "$@"
-
+  while flag_parse "$@"; do
     case "$FLAG" in
       run)
         flag_reqarg && shift "$FLAGSHIFT"
@@ -370,15 +369,12 @@ usage: $0 [--run=jobregex]
 EOF
         exit 0
         ;;
-      '')
-        shift "$FLAGSHIFT"
-        break
-        ;;
       *)
         flag_errusage "unrecognized flag $RAWFLAG"
         ;;
     esac
   done
+  shift "$FLAGSHIFT"
 
   if [ $# -gt 0 ]; then
     flag_errusage "$0 does not accept any arguments"
@@ -439,9 +435,19 @@ if [ -n "${DEBUG-}" ]; then
   set -x
 fi
 
+if ! [ "${COLOR-}" = 0 -o "${COLOR-}" = false ]; then
+  if [ "${COLOR-}" = 1 -o "${COLOR-}" = true -o -t 1 ]; then
+    _COLOR=1
+  fi
+fi
+
 tput() {
-  if [ -n "${COLOR-}" -o -t 1 ]; then
-    command tput "$@"
+  if [ "${COLOR-}" = 0 -o "${COLOR-}" = false ]; then
+    return 0
+  fi
+
+  if [ "${COLOR-}" = 1 -o "${COLOR-}" = true -o -t 1 ]; then
+    TERM=${TERM:-xterm-256color} command tput "$@"
   fi
 }
 
@@ -478,10 +484,10 @@ printfp() {(
   prefix="$1"
   shift
 
-  if [ -z "${COLOR:-}" ]; then
-    COLOR="$(get_rand_color "$prefix")"
+  if [ -z "${FGCOLOR:-}" ]; then
+    FGCOLOR="$(get_rand_color "$prefix")"
   fi
-  printf '%s' "$(setaf "$COLOR" "$prefix")"
+  printf '%s' "$(setaf "$FGCOLOR" "$prefix")"
 
   if [ $# -gt 0 ]; then
     printf ': '
@@ -507,15 +513,15 @@ strlen() {
 }
 
 echoerr() {
-  COLOR=1 echop err "$*" | humanpath>&2
+  FGCOLOR=1 echop err "$*" | humanpath>&2
 }
 
 caterr() {
-  COLOR=1 catp err "$@" | humanpath >&2
+  FGCOLOR=1 catp err "$@" | humanpath >&2
 }
 
 printferr() {
-  COLOR=1 printfp err "$@" | humanpath >&2
+  FGCOLOR=1 printfp err "$@" | humanpath >&2
 }
 
 logp() {
@@ -531,27 +537,27 @@ logpcat() {
 }
 
 log() {
-  COLOR=5 logp log "$@"
+  FGCOLOR=5 logp log "$@"
 }
 
 logf() {
-  COLOR=5 logfp log "$@"
+  FGCOLOR=5 logfp log "$@"
 }
 
 logcat() {
-  COLOR=5 logpcat log "$@"
+  FGCOLOR=5 logpcat log "$@"
 }
 
 warn() {
-  COLOR=3 logp warn "$@"
+  FGCOLOR=3 logp warn "$@"
 }
 
 warnf() {
-  COLOR=3 logfp warn "$@"
+  FGCOLOR=3 logfp warn "$@"
 }
 
 sh_c() {
-  COLOR=3 logp exec "$*"
+  FGCOLOR=3 logp exec "$*"
   if [ -z "${DRY_RUN-}" ]; then
     eval "$@"
   fi
@@ -713,6 +719,8 @@ docker_run() {
     -w "$HOME" \
     -e HOME \
     -e TERM \
+    -e COLOR \
+    -e _COLOR \
     -u "$(id -u):$(id -g)" \
     "$@"
 }
@@ -917,10 +925,10 @@ gitdiff() {(
   mkfifo "$tmpdir/fifo"
   cat "$tmpdir/fifo" | diff-highlight | tail -n +3 &
   trap waitjobs EXIT
-  # 1. If TERM is set we want colors regardless of if output is a TTY.
+  # 1. If _COLOR is set we want colors.
   # 2. Use the best diff algorithm.
   # 3. Highlight trailing whitespace.
-  GIT_CONFIG_NOSYSTEM=1 HOME= git ${TERM:+-c color.diff=always} diff \
+  GIT_CONFIG_NOSYSTEM=1 HOME= git ${_COLOR:+-c color.diff=always} diff \
     --diff-algorithm=histogram \
     --ws-error-highlight=all \
     --no-index "$@" >"$tmpdir/fifo"

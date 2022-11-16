@@ -74,8 +74,7 @@ main() {
     REPO_DIR=.
   fi
 
-  while :; do
-    flag_parse "$@"
+  while flag_parse "$@"; do
     case "$FLAG" in
       h|help)
         help
@@ -105,15 +104,12 @@ main() {
         flag_noarg && shift "$FLAGSHIFT"
         PUBLISH=1
         ;;
-      '')
-        shift "$FLAGSHIFT"
-        break
-        ;;
       *)
         flag_errusage "unrecognized flag $FLAGRAW"
         ;;
     esac
   done
+  shift "$FLAGSHIFT"
 
   if [ $# -gt 0 ]; then
     flag_errusage "no arguments are accepted"
@@ -154,7 +150,7 @@ main() {
 
   if [ -n "${PUBLISH-}" ]; then
     _10_publish
-    COLOR=2 header 'success'
+    FGCOLOR=2 header 'success'
     log "1. merged $pr_url"
     if [ -n "${pr_url_repo-}" ]; then
       log "2. merged $pr_url_repo"
@@ -165,7 +161,7 @@ main() {
     return 0
   fi
 
-  COLOR=2 header 'final steps'
+  FGCOLOR=2 header 'final steps'
   log "1. Review and test the release: $release_url"
   log "2. Merge the PR: $pr_url"
   if [ -n "${pr_url_repo-}" ]; then

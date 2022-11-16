@@ -59,7 +59,7 @@ set_changed_files() {
 }
 
 git_assert_clean() {
-  git ${TERM:+-c color.diff=always} diff --exit-code
+  git ${_COLOR:+-c color.diff=always} diff --exit-code
 }
 
 filter_exists() {

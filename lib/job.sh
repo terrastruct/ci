@@ -53,8 +53,15 @@ runjob() {(
     fi
   fi
 
-  COLOR="$(get_rand_color "$jobname")"
-  jobname="$(setaf "$COLOR" "$jobname")"
+  if [ -z "${COLOR-}" ]; then
+    if [ -t 1 ]; then
+      export COLOR=1
+    else
+      export COLOR=0
+    fi
+  fi
+  FGCOLOR="$(get_rand_color "$jobname")"
+  jobname="$(setaf "$FGCOLOR" "$jobname")"
   _echo "$jobname^:" "$*"
 
   # We need to make sure we exit with a non zero exit if the command fails.
@@ -117,9 +124,7 @@ waitjobs_sigtrap() {
 }
 
 job_parseflags() {
-  while :; do
-    flag_parse "$@"
-
+  while flag_parse "$@"; do
     case "$FLAG" in
       run)
         flag_reqarg && shift "$FLAGSHIFT"
@@ -131,15 +136,12 @@ usage: $0 [--run=jobregex]
 EOF
         exit 0
         ;;
-      '')
-        shift "$FLAGSHIFT"
-        break
-        ;;
       *)
         flag_errusage "unrecognized flag $RAWFLAG"
         ;;
     esac
   done
+  shift "$FLAGSHIFT"
 
   if [ $# -gt 0 ]; then
     flag_errusage "$0 does not accept any arguments"

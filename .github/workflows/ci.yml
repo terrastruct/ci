@@ -9,14 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: TERM=xterm-256color ./assert_linear.sh
+      - run: COLOR=1 ./assert_linear.sh
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: TERM=xterm-256color ./ci/test.sh
+      - run: COLOR=1 ./ci/test.sh
   gen_lib:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: TERM=xterm-256color ./ci/gen_lib.sh
+      - run: COLOR=1 ./ci/gen_lib.sh

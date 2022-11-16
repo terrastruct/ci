@@ -24,9 +24,8 @@ LIB_FLAG=1
 # FLAGSHIFT contains the number by which the arguments should be shifted to
 #   start at the next flag/argument
 #
-# After each call check $FLAG for the name of the parsed flag.
-# If empty, then no more flags are left.
-# Still, call shift "$FLAGSHIFT" in case there was a --
+# flag_parse exits with a non zero code when there are no more flags
+# to be parsed. Still, call shift "$FLAGSHIFT" in case there was a --
 #
 # If the argument for the flag is optional, then use ${FLAGARG-} to access
 # the argument if one was passed. Use ${FLAGARG+x} = x to check if it was set.
@@ -54,18 +53,15 @@ flag_parse() {
       # Remove everything before first equal sign.
       FLAGARG="${1#*=}"
       FLAGSHIFT=1
+      return 0
       ;;
     -)
-      FLAG=
-      FLAGRAW=
-      unset FLAGARG
       FLAGSHIFT=0
+      return 1
       ;;
     --)
-      FLAG=
-      FLAGRAW=
-      unset FLAGARG
       FLAGSHIFT=1
+      return 1
       ;;
     -*)
       # Remove leading hyphens.
@@ -87,15 +83,13 @@ flag_parse() {
             ;;
         esac
       fi
+      return 0
       ;;
     *)
-      FLAG=
-      FLAGRAW=
-      unset FLAGARG
       FLAGSHIFT=0
+      return 1
       ;;
   esac
-  return 0
 }
 
 flag_reqarg() {

@@ -50,8 +50,7 @@ _date() {
 
 main() {
   unset DATE_FORMAT OUTPUT
-  while :; do
-    flag_parse "$@"
+  while flag_parse "$@"; do
     case "$FLAG" in
       h|help)
         help
@@ -76,15 +75,12 @@ main() {
           exec >"$OUTPUT"
         fi
         ;;
-      '')
-        shift "$FLAGSHIFT"
-        break
-        ;;
       *)
         flag_errusage "unrecognized flag $FLAGRAW"
         ;;
     esac
   done
+  shift "$FLAGSHIFT"
 
   if [ $# -eq 0 ]; then
     _date
