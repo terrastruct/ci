@@ -435,9 +435,10 @@ if [ -n "${DEBUG-}" ]; then
   set -x
 fi
 
+export COLOR
 if ! [ "${COLOR-}" = 0 -o "${COLOR-}" = false ]; then
   if [ "${COLOR-}" = 1 -o "${COLOR-}" = true -o -t 1 ]; then
-    _COLOR=1
+    export _COLOR=1
   fi
 fi
 
@@ -484,7 +485,7 @@ printfp() {(
   prefix="$1"
   shift
 
-  if [ -z "${FGCOLOR:-}" ]; then
+  if [ -z "${FGCOLOR-}" ]; then
     FGCOLOR="$(get_rand_color "$prefix")"
   fi
   printf '%s' "$(setaf "$FGCOLOR" "$prefix")"
