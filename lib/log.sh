@@ -142,7 +142,7 @@ This script needs to run the following command as root:
   $*
 Please install doas, sudo, or su.
 EOF
-    exit 1
+    return 1
   fi
 }
 
@@ -170,7 +170,7 @@ hide() {
     return
   fi
   cat "$out" >&2
-  exit "$code"
+  return "$code"
 }
 
 echo_dur() {

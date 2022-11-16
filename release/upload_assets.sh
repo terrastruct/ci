@@ -41,7 +41,7 @@ main() {
   VERSION=${VERSION:-$(git describe 2>/dev/null)}
   if [ -z "${VERSION-}" ]; then
     echoerr "no --version passed and unable to determine version from git describe"
-    exit 1
+    return 1
   fi
 
   sh_c gh release upload "${REPO+"-R \"$REPO\""}" --clobber "$VERSION" "./ci/release/build/$VERSION"/*.tar.gz

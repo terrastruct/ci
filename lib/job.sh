@@ -105,7 +105,7 @@ EOF
     fi
   done
   if [ -n "${FAILURE-}" ]; then
-    exit 1
+    return 1
   fi
 }
 
@@ -156,7 +156,7 @@ lockfile() {
   else
     echoerr "$LOCKFILE locked by $(cat "$LOCKFILE")"
     rm "$LOCKFILE_PID"
-    exit 1
+    return 1
   fi
   trap "rm $tmpfile ${lockfile}" EXIT
 }
@@ -177,7 +177,7 @@ lockfile_ssh() {
   if [ $code -ne 0 ]; then
     echoerr "$LOCKFILE locked by $(ssh "$LOCKHOST" cat "$LOCKFILE")"
     ssh "$LOCKHOST" rm "$LOCKFILE_PID"
-    exit 1
+    return 1
   fi
 }
 

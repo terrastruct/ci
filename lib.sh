@@ -344,7 +344,7 @@ EOF
     fi
   done
   if [ -n "${FAILURE-}" ]; then
-    exit 1
+    return 1
   fi
 }
 
@@ -385,6 +385,7 @@ EOF
   fi
 }
 
+# See https://unix.stackexchange.com/questions/22044/correct-locking-in-shell-scripts
 lockfile() {
   LOCKFILE=$1
   LOCKFILE_PID=$(mktemp)
@@ -394,7 +395,7 @@ lockfile() {
   else
     echoerr "$LOCKFILE locked by $(cat "$LOCKFILE")"
     rm "$LOCKFILE_PID"
-    exit 1
+    return 1
   fi
   trap "rm $tmpfile ${lockfile}" EXIT
 }
@@ -415,7 +416,7 @@ lockfile_ssh() {
   if [ $code -ne 0 ]; then
     echoerr "$LOCKFILE locked by $(ssh "$LOCKHOST" cat "$LOCKFILE")"
     ssh "$LOCKHOST" rm "$LOCKFILE_PID"
-    exit 1
+    return 1
   fi
 }
 
@@ -565,7 +566,7 @@ This script needs to run the following command as root:
   $*
 Please install doas, sudo, or su.
 EOF
-    exit 1
+    return 1
   fi
 }
 
@@ -593,7 +594,7 @@ hide() {
     return
   fi
   cat "$out" >&2
-  exit "$code"
+  return "$code"
 }
 
 echo_dur() {
