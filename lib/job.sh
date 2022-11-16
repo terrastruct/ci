@@ -145,3 +145,39 @@ EOF
     flag_errusage "$0 does not accept any arguments"
   fi
 }
+
+lockfile() {
+  LOCKFILE=$1
+  LOCKFILE_PID=$LOCKFILE.$$
+  echo "pid: $$" > $LOCKFILE_PID
+  if ln "$LOCKFILE_PID" "$LOCKFILE"; then
+    return 0
+  else
+    echoerr "$LOCKFILE locked by $(cat "$LOCKFILE")"
+    rm "$LOCKFILE_PID"
+    exit 1
+  fi
+  trap "rm $tmpfile ${lockfile}" EXIT
+}
+
+unlockfile() {
+  rm "$LOCKFILE_PID" "$LOCKFILE"
+}
+
+lockfile_ssh() {
+  LOCKHOST=$1
+  LOCKFILE=$2
+  LOCKFILE_PID=$LOCKFILE.$$
+  ssh "$LOCKHOST" echo "ssh: $USER@$LOCKHOST" \> $LOCKFILE_PID
+  if ssh "$LOCKHOST" ln "$LOCKFILE_PID" "$LOCKFILE"; then
+    return 0
+  else
+    echoerr "$LOCKFILE locked by $(ssh "$LOCKHOST" cat "$LOCKFILE")"
+    ssh "$LOCKHOST" rm "$LOCKFILE_PID"
+    exit 1
+  fi
+}
+
+unlockfile_ssh() {
+  ssh "$LOCKHOST" rm "$LOCKFILE_PID" "$LOCKFILE"
+}
