@@ -389,6 +389,9 @@ EOF
 lockfile() {
   LOCKFILE=$1
   LOCKFILE_PID=$(mktemp)
+  if [ -n "${LOCKFILE_FORCE-}" ]; then
+    unlockfile_ssh
+  fi
   echo "pid $$" > $LOCKFILE_PID
   if ln "$LOCKFILE_PID" "$LOCKFILE"; then
     return 0
@@ -401,13 +404,16 @@ lockfile() {
 }
 
 unlockfile() {
-  rm "$LOCKFILE_PID" "$LOCKFILE"
+  rm -f "$LOCKFILE_PID" "$LOCKFILE"
 }
 
 lockfile_ssh() {
   LOCKHOST=$1
   LOCKFILE=$2
   LOCKFILE_PID=$(ssh "$LOCKHOST" mktemp)
+  if [ -n "${LOCKFILE_FORCE-}" ]; then
+    unlockfile_ssh
+  fi
   ssh "$LOCKHOST" echo "ssh $USER@$(hostname)" \> "$LOCKFILE_PID"
   set +e
   ssh "$LOCKHOST" ln "$LOCKFILE_PID" "$LOCKFILE"
@@ -421,7 +427,7 @@ lockfile_ssh() {
 }
 
 unlockfile_ssh() {
-  ssh "$LOCKHOST" rm "$LOCKFILE_PID" "$LOCKFILE"
+  ssh "$LOCKHOST" rm -f "$LOCKFILE_PID" "$LOCKFILE"
 }
 #!/bin/sh
 if [ "${LIB_LOG-}" ]; then
