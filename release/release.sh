@@ -212,12 +212,8 @@ _2_ensure_changelogs_repodir() {
   if [ "$REPO_DIR" == . ]; then
     return 0
   fi
-  if [ -f "$REPO_DIR/ci/release/changelogs/$VERSION.md" ]; then
-    log "$REPO_DIR/ci/release/changelogs/$VERSION.md"
-    return 0
-  fi
   sh_c mkdir -p "$REPO_DIR/ci/release/changelogs"
-  sh_c cp "./ci/release/changelogs/next.md" "$REPO_DIR/ci/release/changelogs/$VERSION.md"
+  sh_c cp  "./ci/release/changelogs/$VERSION.md" "$REPO_DIR/ci/release/changelogs/$VERSION.md"
 }
 
 _3_ensure_commit() {
