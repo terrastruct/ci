@@ -101,6 +101,10 @@ main() {
         flag_nonemptyarg && shift "$FLAGSHIFT"
         VERSION=$FLAGARG
         ;;
+      publish)
+        flag_noarg && shift "$FLAGSHIFT"
+        PUBLISH=1
+        ;;
       '')
         shift "$FLAGSHIFT"
         break
