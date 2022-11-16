@@ -320,7 +320,7 @@ _9_upload_assets() {
 # Only ran if --publish is passed.
 _10_publish() {
   release_url="$(sh_c gh release edit --repo "$REPO" --draft=false "$VERSION" | tee /dev/stderr)"
-  sh_c gh pr merge --auto "$pr_url"
+  sh_c gh pr merge --auto --merge "$pr_url"
   if [ -n "${pr_url_repo-}" ]; then
     sh_c gh pr merge --auto --merge "$pr_url_repo"
   fi
