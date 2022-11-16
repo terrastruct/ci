@@ -267,7 +267,6 @@ _4_push_branch_repodir() {
     return 0
   fi
   sh_c git -C "$REPO_DIR" push -f origin "refs/heads/$VERSION"
-  sh_c git -C "$REPO_DIR" push origin master:master
 }
 
 _5_ensure_tag() {
