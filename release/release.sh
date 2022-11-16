@@ -4,24 +4,29 @@ set -eu
 
 help() {
   cat <<EOF
-usage: $0 [--rebuild] --version=<version>
+usage: $0 [--rebuild] [--prerelease] [--dry-run] [--skip-build] [--publish] --version=<version>
 
 $0 implements the $REPO release process.
 
 Flags:
 
---rebuild: Normally the release script will avoid rebuilding release assets if they
-           already exist but if you changed something and need to force rebuild, use
-           this flag.
---prerelease: Pass to mark the release on GitHub as a pre-release. For pre-releases the
-               version format should include a suffix like v0.0.99-alpha.1
-               As well, for pre-releases the script will not overwrite changelogs/next.md
-               with changelogs/template.md and instead keep it the same as
-               changelogs/v0.0.99-alpha.1.md. This is because you want to maintain the
-               changelog entries for the eventual final release.
---dry-run: Print the commands that would be ran without executing them.
---skip-build: Skip the build in case you want to upload your own specific assets.
-              Mainly for testing and debugging.
+--rebuild
+    Normally the release script will avoid rebuilding release assets if they already exist
+    but if you changed something and need to force rebuild, use this flag.
+--prerelease
+    Pass to mark the release on GitHub as a pre-release. For pre-releases the version
+    format should include a suffix like v0.0.99-alpha.1 As well, for pre-releases the
+    script will not overwrite changelogs/next.md with changelogs/template.md and instead
+    keep it the same as changelogs/v0.0.99-alpha.1.md. This is because you want to
+    maintain the changelog entries for the eventual final release.
+--dry-run
+    Print the commands that would be ran without executing them.
+--skip-build
+    Skip the build in case you want to upload your own specific assets. Mainly for testing
+    and debugging.
+--publish
+    Do not publish a draft, publish the release if uploading assets succeeds.
+    PRs wil be merged as well.
 
 Process:
 
@@ -135,6 +140,19 @@ main() {
   header '7_ensure_pr' && _7_ensure_pr
   header '8_ensure_assets' && _8_ensure_assets
   header '9_upload_assets' && _9_upload_assets
+
+  if [ -n "${PUBLISH-}" ]; then
+    _10_publish
+    COLOR=2 header 'success'
+    log "1. merged $pr_url"
+    if [ -n "${pr_url_repo-}" ]; then
+      log "2. merged $pr_url_repo"
+      log "3. published $release_url"
+    else
+      log "2. published $release_url"
+    fi
+    return 0
+  fi
 
   COLOR=2 header 'final steps'
   log "1. Review and test the release: $release_url"
@@ -289,6 +307,15 @@ _8_ensure_assets() {
 
 _9_upload_assets() {
   REPO=$REPO "$(dirname "$0")/upload_assets.sh" --version="$VERSION"
+}
+
+# Only ran if --publish is passed.
+_10_publish() {
+  release_url="$(sh_c gh release edit --repo "$REPO" --draft=false "$VERSION" | tee /dev/stderr)"
+  sh_c gh pr merge "$pr_url"
+  if [ -n "${pr_url_repo-}" ]; then
+    sh_c gh pr merge "$pr_url_repo"
+  fi
 }
 
 main "$@"
