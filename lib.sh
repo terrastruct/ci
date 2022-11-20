@@ -290,7 +290,7 @@ runjob() {(
   should_color || true
   export COLOR=${_COLOR-}
   FGCOLOR="$(get_rand_color "$jobname")"
-  logp "$jobname^" "$*"
+  echop "$jobname^" "$*"
 
   # We need to make sure we exit with a non zero exit if the command fails.
   # /bin/sh does not support -o pipefail unfortunately.
@@ -320,9 +320,9 @@ runjob_exittrap() {
 
   waitjobs_sigtrap
   if [ "$code" -eq 0 ]; then
-    logp "$jobname\$" "$(setaf 2 success)" "($(echo_dur "$dur"))"
+    echop "$jobname\$" "$(setaf 2 success)" "($(echo_dur "$dur"))"
   else
-    logp "$jobname\$" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
+    echop "$jobname\$" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
   fi
   rm -r "$job_tmpdir"
 }
