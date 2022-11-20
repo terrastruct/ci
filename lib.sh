@@ -210,7 +210,8 @@ git_describe_ref() {
   fi
 }
 
-search_up() {
+# subshell for cd ..
+search_up() {(
   file="$1"
   git_root="$(git rev-parse --show-toplevel)"
   while true; do
@@ -224,7 +225,7 @@ search_up() {
     cd ..
   done
   return 1
-}
+)}
 
 xargsd() {
   set_changed_files
@@ -333,12 +334,12 @@ waitjobs() {
   trap waitjobs_sigtrap INT TERM
 
   jobs -p > "$wait_tmpdir/jobsp"
-  while :; do
-    if [ "$(<"$wait_tmpdir/jobsp" wc -l)" -eq 0 ]; then
-      break
-    fi
-    pid=$(head -n1 "$wait_tmpdir/jobsp")
-    tail -n +2 "$wait_tmpdir/jobsp" | sponge "$wait_tmpdir/jobsp"
+  job_count=$(<"$wait_tmpdir/jobsp" wc -l)
+  if [ "$job_count" -eq 0 ]; then
+    return 0
+  fi
+  for i in $(seq "$job_count"); do
+    pid=$(sed -n "${i}p" "$wait_tmpdir/jobsp")
     if ! wait "$pid"; then
       caterr <<EOF
 failed to wait on $pid:

@@ -80,7 +80,8 @@ git_describe_ref() {
   fi
 }
 
-search_up() {
+# subshell for cd ..
+search_up() {(
   file="$1"
   git_root="$(git rev-parse --show-toplevel)"
   while true; do
@@ -94,7 +95,7 @@ search_up() {
     cd ..
   done
   return 1
-}
+)}
 
 xargsd() {
   set_changed_files
