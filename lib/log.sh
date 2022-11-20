@@ -73,11 +73,12 @@ printfp() {(
   if [ -z "${FGCOLOR-}" ]; then
     FGCOLOR="$(get_rand_color "$prefix")"
   fi
-  setaf "$FGCOLOR" "[$prefix]"
-
-  if [ $# -gt 0 ]; then
-    printf ' '
-    printf "$@"
+  if [ $# -eq 0 ]; then
+    should_color || true
+    printf '%s' $(COLOR=${_COLOR-} setaf "$FGCOLOR" "$prefix")
+  else
+    should_color || true
+    printf '%s: %s\n' $(COLOR=${_COLOR-} setaf "$FGCOLOR" "$prefix") "$(printf "$@")"
   fi
 )}
 

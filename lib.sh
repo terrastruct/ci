@@ -303,9 +303,9 @@ runjob() {(
 
   # We add the prefix to all lines and remove any warning lines about recursive make.
   # We cannot silence these with -s which is unfortunate.
-  sed -e "s#^#$(echop "$jobname") #" -e "/make\[.\]: warning: -j/d" "$stdout" &
+  sed -e "s#^#$(echop "$jobname"): #" -e "/make\[.\]: warning: -j/d" "$stdout" &
   # This intentionally does not output to our stderr, it becomes our stdout.
-  sed -e "s#^#$(echop "$jobname") #" -e "/make\[.\]: warning: -j/d" "$stderr" &
+  sed -e "s#^#$(echop "$jobname"): #" -e "/make\[.\]: warning: -j/d" "$stderr" &
 
   start="$(awk 'BEGIN{srand(); print srand()}')"
   trap runjob_exittrap EXIT
@@ -503,11 +503,12 @@ printfp() {(
   if [ -z "${FGCOLOR-}" ]; then
     FGCOLOR="$(get_rand_color "$prefix")"
   fi
-  setaf "$FGCOLOR" "[$prefix]"
-
-  if [ $# -gt 0 ]; then
-    printf ' '
-    printf "$@"
+  if [ $# -eq 0 ]; then
+    should_color || true
+    printf '%s' $(COLOR=${_COLOR-} setaf "$FGCOLOR" "$prefix")
+  else
+    should_color || true
+    printf '%s: %s\n' $(COLOR=${_COLOR-} setaf "$FGCOLOR" "$prefix") "$(printf "$@")"
   fi
 )}
 
