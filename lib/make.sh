@@ -23,12 +23,18 @@ EOF
     CI_MAKE_ROOT=1
     export MAKE_LOG="./.make-log"
     set +e
-    # runtty is necessary to allow make to write its output unbuffered. Otherwise the
-    # output is printed in surges as the write buffer is exceeded rather than a continous
-    # stream. Remove the runtty prefix to experience the laggy behaviour without it.
-    runtty make -sj8 "$@" \
-      | tee /dev/stderr "$MAKE_LOG" \
-      | stripansi > "$MAKE_LOG.txt"
+    if [ -t 1 ]; then
+      # runtty is necessary to allow make to write its output unbuffered. Otherwise the
+      # output is printed in surges as the write buffer is exceeded rather than a continous
+      # stream. Remove the runtty prefix to experience the laggy behaviour without it.
+      runtty make -sj8 "$@" \
+        | tee /dev/stderr "$MAKE_LOG" \
+        | stripansi > "$MAKE_LOG.txt"
+    else
+      make -sj8 "$@" \
+        | tee /dev/stderr "$MAKE_LOG" \
+        | stripansi > "$MAKE_LOG.txt"
+    fi
   else
     CI_MAKE_ROOT=0
     set +e
