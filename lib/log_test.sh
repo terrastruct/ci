@@ -30,7 +30,18 @@ EOF
   assert got "$exp"
 }
 
+case3() {
+  got=$(COLOR=0 header "installing d2 version-x" 2>&1)
+  assert got "/* installing d2 version-x */"
+
+  got=$(COLOR=0 bigheader "installing d2 version-x" 2>&1)
+  assert got "/**
+ * installing d2 version-x
+ **/"
+}
+
 job_parseflags "$@"
 runjob case1 &
 runjob case2 &
+runjob case3 &
 waitjobs
