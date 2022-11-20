@@ -10,24 +10,28 @@ if [ -n "${DEBUG-}" ]; then
 fi
 
 tput() {
-  should_color_flag
-  if [ "${_COLOR-}" ]; then
+  if should_color; then
     TERM=${TERM:-xterm-256color} command tput "$@"
   fi
 }
 
-should_color_flag() {
+should_color() {
   if [ -n "${COLOR-}" ]; then
     if [ "${COLOR-}" = 0 -o "${COLOR-}" = false ]; then
-      _COLOR=
+      _COLOR=0
+      return 1
     elif [ "${COLOR-}" = 1 -o "${COLOR-}" = true ]; then
       _COLOR=1
+      return 0
     else
       printf '$COLOR must be 0, 1, false or true but got %s' "$COLOR" >&2
     fi
   fi
   if [ -t 1 ]; then
     _COLOR=1
+    return 0
+  else
+    return 1
   fi
 }
 
@@ -79,8 +83,8 @@ catp() {
   prefix="$1"
   shift
 
-  should_color_flag
-  sed "s/^/$(COLOR=$_COLOR printfp "$prefix" '')/"
+  should_color || true
+  sed "s/^/$(COLOR=${_COLOR-} printfp "$prefix" '')/"
 }
 
 repeat() {
@@ -106,18 +110,18 @@ printferr() {
 }
 
 logp() {
-  should_color_flag >&2
-  COLOR=$_COLOR echop "$@" | humanpath >&2
+  should_color >&2 || true
+  COLOR=${_COLOR-} echop "$@" | humanpath >&2
 }
 
 logfp() {
-  should_color_flag >&2
-  COLOR=$_COLOR printfp "$@" | humanpath >&2
+  should_color >&2 || true
+  COLOR=${_COLOR-} printfp "$@" | humanpath >&2
 }
 
 logpcat() {
-  should_color_flag >&2
-  COLOR=$_COLOR catp "$@" | humanpath >&2
+  should_color >&2 || true
+  COLOR=${_COLOR-} catp "$@" | humanpath >&2
 }
 
 log() {

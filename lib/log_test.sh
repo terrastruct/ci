@@ -7,7 +7,7 @@ cd - >/dev/null
 
 case1() {
   got=$(COLOR=0 echoerr "It's hard to be humble when you're perfect." 2>&1)
-  assert got "err: It's hard to be humble when you're perfect."
+  assert got "[err] It's hard to be humble when you're perfect."
 }
 
 case2() {
@@ -19,8 +19,8 @@ EOF
   }
   case2_exp() {
     cat <<EOF
-err: It runs like x, where x is something unsavory yuppers.
-err: All the system's paths must be topologically and circularly interrelated for.
+[err] It runs like x, where x is something unsavory yuppers.
+[err] All the system's paths must be topologically and circularly interrelated for.
 EOF
   }
   # heredoc directly inside a command substitution isn't allowed.

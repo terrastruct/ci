@@ -189,7 +189,7 @@ set_changed_files() {
 }
 
 git_assert_clean() {
-  should_color_flag
+  should_color || true
   git ${_COLOR:+-c color.diff=always} diff --exit-code
 }
 
@@ -287,16 +287,10 @@ runjob() {(
     fi
   fi
 
-  if [ -z "${COLOR-}" ]; then
-    if [ -t 1 ]; then
-      export COLOR=1
-    else
-      export COLOR=0
-    fi
-  fi
+  should_color || true
+  export COLOR=${_COLOR-}
   FGCOLOR="$(get_rand_color "$jobname")"
-  jobname="$(setaf "$FGCOLOR" "$jobname")"
-  _echo "$jobname^:" "$*"
+  logp "$jobname^" "$*"
 
   # We need to make sure we exit with a non zero exit if the command fails.
   # /bin/sh does not support -o pipefail unfortunately.
@@ -308,8 +302,9 @@ runjob() {(
 
   # We add the prefix to all lines and remove any warning lines about recursive make.
   # We cannot silence these with -s which is unfortunate.
-  sed -e "s#^#$jobname: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
-  sed -e "s#^#$jobname: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
+  sed -e "s#^#$(echop "$jobname") #" -e "/make\[.\]: warning: -j/d" "$stdout" &
+  # This intentionally does not output to our stderr, it becomes our stdout.
+  sed -e "s#^#$(echop "$jobname") #" -e "/make\[.\]: warning: -j/d" "$stderr" &
 
   start="$(awk 'BEGIN{srand(); print srand()}')"
   trap runjob_exittrap EXIT
@@ -325,9 +320,9 @@ runjob_exittrap() {
 
   waitjobs_sigtrap
   if [ "$code" -eq 0 ]; then
-    _echo "$jobname\$:" "$(setaf 2 success)" "($(echo_dur "$dur"))"
+    logp "$jobname\$" "$(setaf 2 success)" "($(echo_dur "$dur"))"
   else
-    _echo "$jobname\$:" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
+    logp "$jobname\$" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
   fi
   rm -r "$job_tmpdir"
 }
@@ -437,24 +432,28 @@ if [ -n "${DEBUG-}" ]; then
 fi
 
 tput() {
-  should_color_flag
-  if [ "${_COLOR-}" ]; then
+  if should_color; then
     TERM=${TERM:-xterm-256color} command tput "$@"
   fi
 }
 
-should_color_flag() {
+should_color() {
   if [ -n "${COLOR-}" ]; then
     if [ "${COLOR-}" = 0 -o "${COLOR-}" = false ]; then
-      _COLOR=
+      _COLOR=0
+      return 1
     elif [ "${COLOR-}" = 1 -o "${COLOR-}" = true ]; then
       _COLOR=1
+      return 0
     else
       printf '$COLOR must be 0, 1, false or true but got %s' "$COLOR" >&2
     fi
   fi
   if [ -t 1 ]; then
     _COLOR=1
+    return 0
+  else
+    return 1
   fi
 }
 
@@ -506,8 +505,8 @@ catp() {
   prefix="$1"
   shift
 
-  should_color_flag
-  sed "s/^/$(COLOR=$_COLOR printfp "$prefix" '')/"
+  should_color || true
+  sed "s/^/$(COLOR=${_COLOR-} printfp "$prefix" '')/"
 }
 
 repeat() {
@@ -533,18 +532,18 @@ printferr() {
 }
 
 logp() {
-  should_color_flag >&2
-  COLOR=$_COLOR echop "$@" | humanpath >&2
+  should_color >&2 || true
+  COLOR=${_COLOR-} echop "$@" | humanpath >&2
 }
 
 logfp() {
-  should_color_flag >&2
-  COLOR=$_COLOR printfp "$@" | humanpath >&2
+  should_color >&2 || true
+  COLOR=${_COLOR-} printfp "$@" | humanpath >&2
 }
 
 logpcat() {
-  should_color_flag >&2
-  COLOR=$_COLOR catp "$@" | humanpath >&2
+  should_color >&2 || true
+  COLOR=${_COLOR-} catp "$@" | humanpath >&2
 }
 
 log() {
@@ -939,7 +938,7 @@ gitdiff() {(
   mkfifo "$tmpdir/fifo"
   cat "$tmpdir/fifo" | diff-highlight | tail -n +3 &
   trap waitjobs EXIT
-  should_color_flag
+  should_color || true
   # 1. If _COLOR is set we want colors.
   # 2. Use the best diff algorithm.
   # 3. Highlight trailing whitespace.

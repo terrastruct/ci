@@ -53,16 +53,10 @@ runjob() {(
     fi
   fi
 
-  if [ -z "${COLOR-}" ]; then
-    if [ -t 1 ]; then
-      export COLOR=1
-    else
-      export COLOR=0
-    fi
-  fi
+  should_color || true
+  export COLOR=${_COLOR-}
   FGCOLOR="$(get_rand_color "$jobname")"
-  jobname="$(setaf "$FGCOLOR" "$jobname")"
-  _echo "$jobname^:" "$*"
+  logp "$jobname^" "$*"
 
   # We need to make sure we exit with a non zero exit if the command fails.
   # /bin/sh does not support -o pipefail unfortunately.
@@ -74,8 +68,9 @@ runjob() {(
 
   # We add the prefix to all lines and remove any warning lines about recursive make.
   # We cannot silence these with -s which is unfortunate.
-  sed -e "s#^#$jobname: #" -e "/make\[.\]: warning: -j/d" "$stdout" &
-  sed -e "s#^#$jobname: #" -e "/make\[.\]: warning: -j/d" "$stderr" >&2 &
+  sed -e "s#^#$(echop "$jobname") #" -e "/make\[.\]: warning: -j/d" "$stdout" &
+  # This intentionally does not output to our stderr, it becomes our stdout.
+  sed -e "s#^#$(echop "$jobname") #" -e "/make\[.\]: warning: -j/d" "$stderr" &
 
   start="$(awk 'BEGIN{srand(); print srand()}')"
   trap runjob_exittrap EXIT
@@ -91,9 +86,9 @@ runjob_exittrap() {
 
   waitjobs_sigtrap
   if [ "$code" -eq 0 ]; then
-    _echo "$jobname\$:" "$(setaf 2 success)" "($(echo_dur "$dur"))"
+    logp "$jobname\$" "$(setaf 2 success)" "($(echo_dur "$dur"))"
   else
-    _echo "$jobname\$:" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
+    logp "$jobname\$" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
   fi
   rm -r "$job_tmpdir"
 }

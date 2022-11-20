@@ -59,7 +59,7 @@ set_changed_files() {
 }
 
 git_assert_clean() {
-  should_color_flag
+  should_color || true
   git ${_COLOR:+-c color.diff=always} diff --exit-code
 }
 
