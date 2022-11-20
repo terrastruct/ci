@@ -711,7 +711,6 @@ EOF
     # make -sj8 "$@"
   fi
 
-  set -x
   set +e
   make -sj8 "$@"
   code="$?"
