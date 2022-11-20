@@ -189,6 +189,7 @@ set_changed_files() {
 }
 
 git_assert_clean() {
+  should_color_flag
   git ${_COLOR:+-c color.diff=always} diff --exit-code
 }
 
@@ -435,20 +436,25 @@ if [ -n "${DEBUG-}" ]; then
   set -x
 fi
 
-export COLOR
-if ! [ "${COLOR-}" = 0 -o "${COLOR-}" = false ]; then
-  if [ "${COLOR-}" = 1 -o "${COLOR-}" = true -o -t 1 ]; then
-    export _COLOR=1
-  fi
-fi
-
 tput() {
-  if [ "${COLOR-}" = 0 -o "${COLOR-}" = false ]; then
-    return 0
-  fi
-
-  if [ "${COLOR-}" = 1 -o "${COLOR-}" = true -o -t 1 ]; then
+  should_color_flag
+  if [ "${_COLOR-}" ]; then
     TERM=${TERM:-xterm-256color} command tput "$@"
+  fi
+}
+
+should_color_flag() {
+  if [ -n "${COLOR-}" ]; then
+    if [ "${COLOR-}" = 0 -o "${COLOR-}" = false ]; then
+      _COLOR=
+    elif [ "${COLOR-}" = 1 -o "${COLOR-}" = true ]; then
+      _COLOR=1
+    else
+      printf '$COLOR must be 0, 1, false or true but got %s' "$COLOR" >&2
+    fi
+  fi
+  if [ -t 1 ]; then
+    _COLOR=1
   fi
 }
 
@@ -488,10 +494,10 @@ printfp() {(
   if [ -z "${FGCOLOR-}" ]; then
     FGCOLOR="$(get_rand_color "$prefix")"
   fi
-  printf '%s' "$(setaf "$FGCOLOR" "$prefix")"
+  setaf "$FGCOLOR" "[$prefix]"
 
   if [ $# -gt 0 ]; then
-    printf ': '
+    printf ' '
     printf "$@"
   fi
 )}
@@ -500,7 +506,8 @@ catp() {
   prefix="$1"
   shift
 
-  sed "s/^/$(printfp "$prefix" '')/"
+  should_color_flag
+  sed "s/^/$(COLOR=$_COLOR printfp "$prefix" '')/"
 }
 
 repeat() {
@@ -514,27 +521,30 @@ strlen() {
 }
 
 echoerr() {
-  FGCOLOR=1 echop err "$*" | humanpath>&2
+  FGCOLOR=1 logp err "$*" | humanpath>&2
 }
 
 caterr() {
-  FGCOLOR=1 catp err "$@" | humanpath >&2
+  FGCOLOR=1 logpcat err "$@" | humanpath >&2
 }
 
 printferr() {
-  FGCOLOR=1 printfp err "$@" | humanpath >&2
+  FGCOLOR=1 logfp err "$@" | humanpath >&2
 }
 
 logp() {
-  echop "$@" | humanpath >&2
+  should_color_flag >&2
+  COLOR=$_COLOR echop "$@" | humanpath >&2
 }
 
 logfp() {
-  printfp "$@" | humanpath >&2
+  should_color_flag >&2
+  COLOR=$_COLOR printfp "$@" | humanpath >&2
 }
 
 logpcat() {
-  catp "$@" | humanpath >&2
+  should_color_flag >&2
+  COLOR=$_COLOR catp "$@" | humanpath >&2
 }
 
 log() {
@@ -555,6 +565,10 @@ warn() {
 
 warnf() {
   FGCOLOR=3 logfp warn "$@"
+}
+
+warncat() {
+  FGCOLOR=3 logpcat warn "$@"
 }
 
 sh_c() {
@@ -721,7 +735,6 @@ docker_run() {
     -e HOME \
     -e TERM \
     -e COLOR \
-    -e _COLOR \
     -u "$(id -u):$(id -g)" \
     "$@"
 }
@@ -926,6 +939,7 @@ gitdiff() {(
   mkfifo "$tmpdir/fifo"
   cat "$tmpdir/fifo" | diff-highlight | tail -n +3 &
   trap waitjobs EXIT
+  should_color_flag
   # 1. If _COLOR is set we want colors.
   # 2. Use the best diff algorithm.
   # 3. Highlight trailing whitespace.
