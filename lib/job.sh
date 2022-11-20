@@ -165,7 +165,7 @@ lockfile() {
     rm "$LOCKFILE_PID"
     return 1
   fi
-  trap "rm $tmpfile ${lockfile}" EXIT
+  trap "rm $tmpfile $lockfile" EXIT
 }
 
 unlockfile() {
@@ -189,6 +189,7 @@ lockfile_ssh() {
     ssh "$LOCKHOST" rm "$LOCKFILE_PID"
     return 1
   fi
+  trap "unlockfile_ssh" EXIT
 }
 
 unlockfile_ssh() {
