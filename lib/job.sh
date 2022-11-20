@@ -94,14 +94,21 @@ runjob_exittrap() {
 }
 
 waitjobs() {
-  JOBS="$(jobs -l)"
+  wait_tmpdir="$(mktemp -d)"
+  jobs -l > "$wait_tmpdir/jobsl"
   trap waitjobs_sigtrap INT TERM
 
-  for pid in $(jobs -p); do
+  jobs -p > "$wait_tmpdir/jobsp"
+  while :; do
+    if [ "$(<"$wait_tmpdir/jobsp" wc -l)" -eq 0 ]; then
+      break
+    fi
+    pid=$(head -n1 "$wait_tmpdir/jobsp")
+    tail -n +2 "$wait_tmpdir/jobsp" | sponge "$wait_tmpdir/jobsp"
     if ! wait "$pid"; then
       caterr <<EOF
 failed to wait on $pid:
-$(_echo "$JOBS" | grep "$pid")
+$(<"$wait_tmpdir/jobsl" grep "$pid")
 EOF
       FAILURE=1
     fi
