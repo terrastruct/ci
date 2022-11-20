@@ -38,23 +38,22 @@ EOF
   else
     CI_MAKE_ROOT=0
     # set +e
-    # make -sj8 "$@" 2>&1
+    # make -sj8 "$@"
   fi
 
+  set -x
   set +e
-  make -sj8 "$@" 2>&1
+  make -sj8 "$@"
   code="$?"
   set -e
   if [ "$code" -ne 0 ]; then
     notify "$code"
     return "$code"
   fi
-  if [ -n "${CI:-}" ]; then
-    # Make sure nothing has changed
-    if ! git_assert_clean; then
-      notify 1
-      return 1
-    fi
+  # Make sure nothing has changed
+  if [ -n "${CI-}" ] && ! git_assert_clean; then
+    notify 1
+    return 1
   fi
   notify 0
 }
