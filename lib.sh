@@ -257,35 +257,8 @@ runjob() {(
     set "$jobname"
   fi
 
-  if [ -n "${JOBFILTER-}" ]; then
-    export SKIPDIR="$(mktemp -d)"
-    trap 'rm -rf $SKIPDIR' EXIT
-    # For each slash separated element of $JOBNAME, $JOBFILTER must match at its
-    # corresponding element. In order to facilitate this, we split $JOBFILTER on / and then
-    # reconstruct the regex up to the point of each / and match it against $JOBNAME.
-    # If the constructed regex matches $JOBNAME every iteration until we run out of
-    # elements in $JOBNAME to match against, then the job is not skipped.
-    matches=$(_echo "$JOBNAME" | tr / '\n' | wc -l)
-    i=1
-    _echo "$JOBFILTER" | tr / $'\n' | while read -r regex; do
-      if [ -z "$regex" ]; then
-        regex='[^/]*'
-      fi
-      regex=${prev+$prev/}$regex
-      if ! _echo "$JOBNAME" | grep -q "^$regex"; then
-        touch "$SKIPDIR/skip"
-        return 0
-      fi
-      if [ "$i" -eq "$matches" ]; then
-        return 0
-      fi
-      prev=$regex
-      i=$(( i + 1 ))
-    done
-    if [ -e "$SKIPDIR/skip" ]; then
-      # Skip.
-      return 0
-    fi
+  if ! runjob_filter; then
+    return 0
   fi
 
   should_color || true
@@ -314,6 +287,37 @@ runjob() {(
   ( eval "$*" >"$stdout" 2>"$stderr" )
 )}
 
+runjob_filter() {(
+  if [ -z "${JOBFILTER-}" ]; then
+    return 0
+  fi
+
+  tmpdir="$(mktemp -d)"
+  trap 'rm -rf "$tmpdir"' EXIT
+  # For each slash separated element of $JOBNAME, $JOBFILTER must match at its
+  # corresponding element. In order to facilitate this, we split $JOBFILTER on / and then
+  # reconstruct the regex up to the point of each / and match it against $JOBNAME.
+  # If the constructed regex matches $JOBNAME every iteration until we run out of
+  # elements in $JOBNAME to match against, then the job is not skipped.
+  echo "$JOBNAME" | tr / '\n' > "$tmpdir/jobname"
+  echo "$JOBFILTER" | tr / '\n' > "$tmpdir/jobfilter"
+  jobname_count=$(<"$tmpdir/jobname" wc -l)
+  jobfilter_count=$(<"$tmpdir/jobfilter" wc -l)
+  if [ "$jobname_count" -lt "$jobfilter_count" ]; then
+    min=$jobname_count
+  else
+    min=$jobfilter_count
+  fi
+  for i in $(seq "$min"); do
+    job_el=$(sed -n "${i}p" "$tmpdir/jobname")
+    regex_el=$(sed -n "${i}p" "$tmpdir/jobfilter")
+    if ! printf %s "$job_el" | grep -q "$regex_el"; then
+      return 1
+    fi
+  done
+  return 0
+)}
+
 runjob_exittrap() {
   code="$?"
   end="$(awk 'BEGIN{srand(); print srand()}')"
@@ -334,12 +338,7 @@ waitjobs() {
   trap waitjobs_sigtrap INT TERM
 
   jobs -p > "$wait_tmpdir/jobsp"
-  job_count=$(<"$wait_tmpdir/jobsp" wc -l)
-  if [ "$job_count" -eq 0 ]; then
-    return 0
-  fi
-  for i in $(seq "$job_count"); do
-    pid=$(sed -n "${i}p" "$wait_tmpdir/jobsp")
+  for pid in $(cat "$wait_tmpdir/jobsp"); do
     if ! wait "$pid"; then
       caterr <<EOF
 failed to wait on $pid:
