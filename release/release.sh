@@ -72,6 +72,7 @@ main() {
   if [ -z "${REPO-}" ]; then
     REPO=$(gh_repo)
     REPO_DIR=.
+    SRC_PREFIX=
   fi
 
   while flag_parse "$@"; do
@@ -136,6 +137,7 @@ main() {
       sh_c mkdir -p "$REPO_DIR"
       sh_c git clone "https://github.com/$REPO" "$REPO_DIR"
     fi
+    SRC_PREFIX=$(basename "$REPO")-
   fi
 
   header '1_ensure_branch' && _1_ensure_branch
@@ -173,8 +175,8 @@ main() {
 }
 
 _1_ensure_branch() {
-  if [ -z "$(git branch --list "$VERSION")" ]; then
-    sh_c git branch "$VERSION" master
+  if [ -z "$(git branch --list "$SRC_PREFIX$VERSION")" ]; then
+    sh_c git branch "$SRC_PREFIX$VERSION" master
   fi
 
   STASHED=
@@ -182,7 +184,7 @@ _1_ensure_branch() {
     sh_c git stash
     STASHED=1
   fi
-  sh_c git checkout "$VERSION"
+  sh_c git checkout "$SRC_PREFIX$VERSION"
   if [ -n "${STASHED-}" ]; then
     sh_c git stash pop
   fi
@@ -233,10 +235,10 @@ _2_ensure_changelogs_repodir() {
 
 _3_ensure_commit() {
   sh_c git add --all
-  if [ "$(git show --no-patch --format=%s)" = "$VERSION" ]; then
+  if [ "$(git show --no-patch --format=%s)" = "$SRC_PREFIX$VERSION" ]; then
     sh_c git commit --allow-empty --amend --no-edit
   else
-    sh_c git commit --allow-empty -m "$VERSION"
+    sh_c git commit --allow-empty -m "$SRC_PREFIX$VERSION"
   fi
   _3_ensure_commit_repodir
 }
@@ -254,7 +256,7 @@ _3_ensure_commit_repodir() {
 }
 
 _4_push_branch() {
-  sh_c git push -f origin "refs/heads/$VERSION"
+  sh_c git push -f origin "refs/heads/$SRC_PREFIX$VERSION"
   _4_push_branch_repodir
 }
 
@@ -290,10 +292,10 @@ _6_ensure_release() {
 
 _7_ensure_pr() {
   # We do not use gh pr view as that includes closed PRs.
-  pr_url="$(gh pr list --head "$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
+  pr_url="$(gh pr list --head "$SRC_PREFIX$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
   body="Will be available at $(cd "$REPO_DIR" && gh repo view --json=url '--template={{ .url }}')/releases/tag/$VERSION"
   if [ -n "$pr_url" ]; then
-    pr_url=$(sh_c gh pr edit --body "'$body'" "$VERSION" | tee /dev/stderr)
+    pr_url=$(sh_c gh pr edit --body "'$body'" "$SRC_PREFIX$VERSION" | tee /dev/stderr)
     _7_ensure_pr_repodir
     return 0
   fi
