@@ -163,14 +163,14 @@ case_reqarg() {
   set -- -m
   flag_parse "$@"
   assert FLAG m
-  assert flag_reqarg "$(COLOR=0 flag_reqarg 2>&1)" "[err] flag -m requires an argument
-[err] Run with --help for usage."
+  assert flag_reqarg "$(COLOR=0 flag_reqarg 2>&1)" "err: flag -m requires an argument
+err: Run with --help for usage."
 
   set -- --meow
   flag_parse "$@"
   assert FLAG meow
-  assert flag_reqarg "$(COLOR=0 flag_reqarg 2>&1)" "[err] flag --meow requires an argument
-[err] Run with --help for usage."
+  assert flag_reqarg "$(COLOR=0 flag_reqarg 2>&1)" "err: flag --meow requires an argument
+err: Run with --help for usage."
 
   set -- --jingle=''
   flag_parse "$@"
@@ -184,20 +184,20 @@ case_nonemptyarg() {
   set -- -m
   flag_parse "$@"
   assert FLAG m
-  assert flag_nonemptyarg "$(COLOR=0 flag_nonemptyarg 2>&1)" "[err] flag -m requires an argument
-[err] Run with --help for usage."
+  assert flag_nonemptyarg "$(COLOR=0 flag_nonemptyarg 2>&1)" "err: flag -m requires an argument
+err: Run with --help for usage."
 
   set -- --meow
   flag_parse "$@"
   assert FLAG meow
-  assert flag_nonemptyarg "$(COLOR=0 flag_nonemptyarg 2>&1)" "[err] flag --meow requires an argument
-[err] Run with --help for usage."
+  assert flag_nonemptyarg "$(COLOR=0 flag_nonemptyarg 2>&1)" "err: flag --meow requires an argument
+err: Run with --help for usage."
 
   set -- --jingle=''
   flag_parse "$@"
   assert FLAG jingle
-  assert flag_nonemptyarg "$(COLOR=0 flag_nonemptyarg 2>&1)" "[err] flag --jingle requires a non-empty argument
-[err] Run with --help for usage."
+  assert flag_nonemptyarg "$(COLOR=0 flag_nonemptyarg 2>&1)" "err: flag --jingle requires a non-empty argument
+err: Run with --help for usage."
 }
 
 case_noarg() {
@@ -218,8 +218,8 @@ case_noarg() {
   set -- -z=ok
   flag_parse "$@"
   assert FLAG z
-  assert flag_noarg "$(COLOR=0 flag_noarg 2>&1)" "[err] flag -z does not accept an argument
-[err] Run with --help for usage."
+  assert flag_noarg "$(COLOR=0 flag_noarg 2>&1)" "err: flag -z does not accept an argument
+err: Run with --help for usage."
 }
 
 case_flag_fmt() {

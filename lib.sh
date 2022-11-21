@@ -954,7 +954,12 @@ gitdiff_vars() {
 
 gitdiff() {(
   mkfifo "$tmpdir/fifo"
-  cat "$tmpdir/fifo" | diff-highlight | tail -n +3 &
+  if command -v diff-highlight >/dev/null; then
+    # https://github.com/git/git/blob/master/contrib/diff-highlight/README
+    cat "$tmpdir/fifo" | diff-highlight | tail -n +3 &
+  else
+    cat "$tmpdir/fifo" | tail -n +3 &
+  fi
   trap waitjobs EXIT
   should_color || true
   # 1. If _COLOR is set we want colors.
