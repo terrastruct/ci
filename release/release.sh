@@ -292,7 +292,7 @@ _6_ensure_release() {
 
 _7_ensure_pr() {
   # We do not use gh pr view as that includes closed PRs.
-  pr_url="$(gh pr list --head "$SRC_PREFIX$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
+  pr_url="$(gh pr list --state all --head "$SRC_PREFIX$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
   body="Will be available at $(cd "$REPO_DIR" && gh repo view --json=url '--template={{ .url }}')/releases/tag/$VERSION"
   if [ -n "$pr_url" ]; then
     pr_url=$(sh_c gh pr edit --body "'$body'" "$SRC_PREFIX$VERSION" | tee /dev/stderr)
@@ -311,7 +311,7 @@ _7_ensure_pr_repodir() {
   fi
 
   # We do not use gh pr view as that includes closed PRs.
-  pr_url_repo="$(gh pr list --repo "$REPO" --head "$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
+  pr_url_repo="$(gh pr list --repo "$REPO" --state all --head "$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
   body="Will be available at $(cd "$REPO_DIR" && gh repo view --json=url '--template={{ .url }}')/releases/tag/$VERSION"
   if [ -n "$pr_url_repo" ]; then
     pr_url_repo=$(sh_c gh pr edit --repo "$REPO" --body "'$body'" "$VERSION" | tee /dev/stderr)
