@@ -69,7 +69,7 @@ notify() {
     fi
     msg="$msg\`\`\`
 $emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
-\`\`\`$GITHUB_JOB_URL"
+\`\`\`<$GITHUB_JOB_URL>"
     json="{\"content\":$(printf %s "$msg" | jq -sR .)}"
     url="$DISCORD_WEBHOOK_URL"
   elif [ "${SLACK_WEBHOOK_URL:-}" ]; then
