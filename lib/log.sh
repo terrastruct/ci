@@ -24,7 +24,7 @@ should_color() {
       _COLOR=1
       return 0
     else
-      printf '$COLOR must be 0, 1, false or true but got %s' "$COLOR" >&2
+      printf '$COLOR must be 0, 1, false or true but got %s\n' "$COLOR" >&2
     fi
   fi
 
