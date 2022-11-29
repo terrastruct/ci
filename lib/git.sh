@@ -19,7 +19,7 @@ set_git_base() {
   fi
 
   if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
-    git fetch --unshallow origin master
+    git fetch --recurse-submodules=no --unshallow origin master
   fi
 
   # Unfortunately --grep searches the whole commit message but we just want the header

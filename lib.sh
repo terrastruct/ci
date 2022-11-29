@@ -149,7 +149,7 @@ set_git_base() {
   fi
 
   if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
-    git fetch --unshallow origin master
+    git fetch --recurse-submodules=no --unshallow origin master
   fi
 
   # Unfortunately --grep searches the whole commit message but we just want the header
@@ -762,7 +762,7 @@ fi
 LIB_NOTIFY=1
 
 notify() {
-  if [ "$CI_MAKE_ROOT" = 0 -o -z "${CI:-}" ]; then
+  if [ "${CI_MAKE_ROOT-}" = 0 -o -z "${CI:-}" ]; then
     return
   fi
   if [ -z "${SLACK_WEBHOOK_URL:-}" -a -z "${DISCORD_WEBHOOK_URL:-}" ]; then

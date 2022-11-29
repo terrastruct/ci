@@ -5,10 +5,6 @@ cd -- "$(dirname "$0")/lib"
 . ./notify.sh
 cd - >/dev/null
 
-if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
-  git fetch --unshallow origin master
-fi
-
 set_git_base
 commits="$(git log --grep='fixup!' --format=%h ${GIT_BASE:+"$GIT_BASE..HEAD"})"
 if [ -n "$commits" ]; then
