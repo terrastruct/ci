@@ -6,11 +6,11 @@ LIB_GIT=1
 . ./log.sh
 
 set_git_base() {
-  if [ -n "${GIT_BASE_DONE:-}" ]; then
+  if [ "${GIT_BASE+x}" = x ]; then
     return
   fi
 
-  if [ -n "${CI_FORCE:-}" ]; then
+  if [ -n "${CI_FORCE-}" ]; then
     return
   fi
 
@@ -25,7 +25,6 @@ set_git_base() {
   # Unfortunately --grep searches the whole commit message but we just want the header
   # searched. Should fix by using grep directly later.
   export GIT_BASE="$(git log --merges --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
-  export GIT_BASE_DONE=1
   if [ -n "$GIT_BASE" ]; then
     echop make "GIT_BASE=$GIT_BASE"
   fi
@@ -33,7 +32,7 @@ set_git_base() {
 
 is_changed() {
   set_git_base
-  if [ -z "${GIT_BASE:-}" ]; then
+  if [ -z "${GIT_BASE-}" ]; then
     return
   fi
 
@@ -44,13 +43,13 @@ is_changed() {
 set_changed_files() {
   set_git_base
 
-  if [ -n "${CHANGED_FILES:-}" ]; then
+  if [ -n "${CHANGED_FILES-}" ]; then
     return
   fi
 
   CHANGED_FILES=./.changed-files
   git ls-files --other --exclude-standard > "$CHANGED_FILES"
-  if [ -n "${GIT_BASE:-}" ]; then
+  if [ -n "${GIT_BASE-}" ]; then
     git diff --relative --name-only "$GIT_BASE" | filter_exists >> "$CHANGED_FILES"
   else
     git ls-files >> "$CHANGED_FILES"
