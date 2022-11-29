@@ -10,7 +10,7 @@ set_git_base() {
     return
   fi
 
-  if [ -n "${CI_ALL:-}" ]; then
+  if [ -n "${CI_FORCE:-}" ]; then
     return
   fi
 
