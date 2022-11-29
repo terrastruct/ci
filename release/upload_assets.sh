@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
-. "$(dirname "$0")/../lib.sh"
+cd -- "$(dirname "$0")/../lib"
+. ./flag.sh
+cd - >/dev/null
 
 help() {
   cat <<EOF

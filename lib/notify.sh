@@ -6,7 +6,7 @@ LIB_NOTIFY=1
 . ./log.sh
 
 notify() {
-  if [ "$CI_MAKE_ROOT" -eq 0 -o -z "${CI:-}" ]; then
+  if [ "$CI_MAKE_ROOT" = 0 -o -z "${CI:-}" ]; then
     return
   fi
   if [ -z "${SLACK_WEBHOOK_URL:-}" -a -z "${DISCORD_WEBHOOK_URL:-}" ]; then

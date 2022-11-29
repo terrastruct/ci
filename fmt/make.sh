@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
-. "$(dirname "$0")/../lib.sh"
+cd -- "$(dirname "$0")/../lib"
+. ./make.sh
+. ./notify.sh
+cd - >/dev/null
 PATH="$(cd -- "$(dirname "$0")" && pwd)/../bin:$PATH"
 
 set_changed_files

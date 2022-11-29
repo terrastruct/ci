@@ -26,7 +26,7 @@ set_git_base() {
   # searched. Should fix by using grep directly later.
   export GIT_BASE="$(git log --merges --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
   if [ -n "$GIT_BASE" ]; then
-    echop make "GIT_BASE=$GIT_BASE"
+    echop lib/git.sh "GIT_BASE=$GIT_BASE"
   fi
 }
 

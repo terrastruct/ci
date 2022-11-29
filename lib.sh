@@ -156,7 +156,7 @@ set_git_base() {
   # searched. Should fix by using grep directly later.
   export GIT_BASE="$(git log --merges --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
   if [ -n "$GIT_BASE" ]; then
-    echop make "GIT_BASE=$GIT_BASE"
+    echop lib/git.sh "GIT_BASE=$GIT_BASE"
   fi
 }
 
@@ -530,15 +530,15 @@ strlen() {
 }
 
 echoerr() {
-  FGCOLOR=1 logp err "$*" | humanpath>&2
+  FGCOLOR=1 logp err "$*"
 }
 
 caterr() {
-  FGCOLOR=1 logpcat err "$@" | humanpath >&2
+  FGCOLOR=1 logpcat err "$@"
 }
 
 printferr() {
-  FGCOLOR=1 logfp err "$@" | humanpath >&2
+  FGCOLOR=1 logfp err "$@"
 }
 
 logp() {
@@ -762,7 +762,7 @@ fi
 LIB_NOTIFY=1
 
 notify() {
-  if [ "$CI_MAKE_ROOT" -eq 0 -o -z "${CI:-}" ]; then
+  if [ "$CI_MAKE_ROOT" = 0 -o -z "${CI:-}" ]; then
     return
   fi
   if [ -z "${SLACK_WEBHOOK_URL:-}" -a -z "${DISCORD_WEBHOOK_URL:-}" ]; then
