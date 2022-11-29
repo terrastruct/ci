@@ -186,6 +186,7 @@ set_changed_files() {
     git ls-files >> "$CHANGED_FILES"
   fi
   export CHANGED_FILES
+  logpcat changed <"$CHANGED_FILES"
 }
 
 git_assert_clean() {
