@@ -181,8 +181,9 @@ header() {
 }
 
 bigheader() {
+  set -- "$(echo "$*" | sed "s/^/ * /")"
   logp "/**
- * $1
+$*
  **/"
 }
 

@@ -140,7 +140,7 @@ set_git_base() {
     return
   fi
 
-  if [ -n "${CI_ALL:-}" ]; then
+  if [ -n "${CI_FORCE:-}" ]; then
     return
   fi
 
@@ -454,7 +454,7 @@ should_color() {
       _COLOR=1
       return 0
     else
-      printf '$COLOR must be 0, 1, false or true but got %s' "$COLOR" >&2
+      printf '$COLOR must be 0, 1, false or true but got %s\n' "$COLOR" >&2
     fi
   fi
 
@@ -611,8 +611,9 @@ header() {
 }
 
 bigheader() {
+  set -- "$(echo "$*" | sed "s/^/ * /")"
   logp "/**
- * $1
+$*
  **/"
 }
 

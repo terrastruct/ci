@@ -38,6 +38,13 @@ case3() {
   assert got "/**
  * installing d2 version-x
  **/"
+
+  got=$(COLOR=0 bigheader "one
+two" 2>&1)
+  assert got "/**
+ * one
+ * two
+ **/"
 }
 
 job_parseflags "$@"
