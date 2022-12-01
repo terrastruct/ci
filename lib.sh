@@ -283,6 +283,15 @@ xargsd() {
 
   < "$CHANGED_FILES" grep "$pattern" | hide xargs ${CI:+-r} -t -P16 "-n${XARGS_N:-256}" -- "$@"
 }
+
+nofixups() {
+  detect_git_base
+  commits="$(git log --grep='fixup!' --format=%h ${GIT_BASE:+"$GIT_BASE..HEAD"})"
+  if [ -n "$commits" ]; then
+    echo "$commits" | FGCOLOR=1 logpcat 'fixup detected'
+    return 1
+  fi
+}
 #!/bin/sh
 if [ "${LIB_JOB-}" ]; then
   return 0
