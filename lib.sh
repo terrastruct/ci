@@ -1,4 +1,30 @@
 #!/bin/sh
+if [ "${LIB_CI-}" ]; then
+  return 0
+fi
+LIB_CI=1
+
+ci_go_fmt() {
+	sh_c xargsd '\.go$' gofmt -s -w
+	sh_c xargsd '\.go$' go run golang.org/x/tools/cmd/goimports@v0.3.0 \
+		-w -local="$(go list -m)"
+  if search_up go.mod; then
+    sh_c go mod tidy
+  fi
+}
+
+ci_go_lint() {
+  go vet --composites=false ./...
+}
+
+ci_go_build() {
+  go build ./...
+}
+
+ci_go_test() {
+  go test "${TESTFLAGS:-./...}"
+}
+#!/bin/sh
 if [ "${LIB_FLAG-}" ]; then
   return 0
 fi
@@ -135,7 +161,7 @@ if [ "${LIB_GIT-}" ]; then
 fi
 LIB_GIT=1
 
-set_git_base() {
+detect_git_base() {
   if [ "${GIT_BASE+x}" = x ]; then
     return
   fi
@@ -161,7 +187,7 @@ set_git_base() {
 }
 
 is_changed() {
-  set_git_base
+  detect_git_base
   if [ -z "${GIT_BASE-}" ]; then
     return
   fi
@@ -170,14 +196,15 @@ is_changed() {
     [ -n "$(git ls-files --other --exclude-standard -- "$@")" ]
 }
 
-set_changed_files() {
-  set_git_base
+detect_changed_files() {
+  detect_git_base
 
   if [ -n "${CHANGED_FILES-}" ]; then
     return
   fi
 
-  CHANGED_FILES=./.changed-files
+  CHANGED_FILES=$(mktemp -d)/changed-files
+  trap changed_files_exittrap EXIT
   git ls-files --other --exclude-standard > "$CHANGED_FILES"
   if [ -n "${GIT_BASE-}" ]; then
     git diff --relative --name-only "$GIT_BASE" | filter_exists >> "$CHANGED_FILES"
@@ -188,9 +215,16 @@ set_changed_files() {
   logpcat changed <"$CHANGED_FILES"
 }
 
+changed_files_exittrap() {
+  rm -f "$CHANGED_FILES"
+}
+
 git_assert_clean() {
-  should_color || true
-  git ${_COLOR:+-c color.diff=always} diff --exit-code
+  if should_color; then
+    git -c color.diff=always diff --exit-code
+  else
+    git -c color.diff=never diff --exit-code
+  fi
 }
 
 filter_exists() {
@@ -228,7 +262,7 @@ search_up() {(
 )}
 
 xargsd() {
-  set_changed_files
+  detect_changed_files
 
   pattern="$1"
   shift
@@ -262,7 +296,7 @@ runjob() {(
   fi
 
   should_color || true
-  export COLOR=${_COLOR-}
+  export COLOR=$__COLOR
   FGCOLOR="$(get_rand_color "$jobname")"
   echop "$jobname^" "$*"
 
@@ -429,6 +463,17 @@ lockfile_ssh() {
 unlockfile_ssh() {
   ssh "$LOCKHOST" rm -f "$LOCKFILE_PID" "$LOCKFILE"
 }
+
+ci_waitjobs() {
+  capcode waitjobs
+  if [ "$code" = 0 -a -n "${CI-}" ]; then
+    capcode git_assert_clean
+  fi
+  if [ "$code" != 0 ]; then
+    notify "$code"
+    return "$code"
+  fi
+}
 #!/bin/sh
 if [ "${LIB_LOG-}" ]; then
   return 0
@@ -447,12 +492,14 @@ tput() {
 
 should_color() {
   if [ -n "${COLOR-}" ]; then
-    if [ "$COLOR" = 0 -o "$COLOR" = false ]; then
-      _COLOR=
-      return 1
-    elif [ "$COLOR" = 1 -o "$COLOR" = true ]; then
+    if [ "$COLOR" = 1 -o "$COLOR" = true ]; then
       _COLOR=1
+      __COLOR=1
       return 0
+    elif [ "$COLOR" = 0 -o "$COLOR" = false ]; then
+      _COLOR=
+      __COLOR=0
+      return 1
     else
       printf '$COLOR must be 0, 1, false or true but got %s\n' "$COLOR" >&2
     fi
@@ -460,9 +507,11 @@ should_color() {
 
   if [ -t 1 -a "${TERM-}" != dumb ]; then
     _COLOR=1
+    __COLOR=1
     return 0
   else
     _COLOR=
+    __COLOR=0
     return 1
   fi
 }
@@ -506,9 +555,9 @@ printfp() {(
   fi
   should_color || true
   if [ $# -eq 0 ]; then
-    printf '%s' "$(COLOR=${_COLOR-} setaf "$FGCOLOR" "$prefix")"
+    printf '%s' "$(COLOR=$__COLOR setaf "$FGCOLOR" "$prefix")"
   else
-    printf '%s: %s\n' "$(COLOR=${_COLOR-} setaf "$FGCOLOR" "$prefix")" "$(printf "$@")"
+    printf '%s: %s\n' "$(COLOR=$__COLOR setaf "$FGCOLOR" "$prefix")" "$(printf "$@")"
   fi
 )}
 
@@ -517,7 +566,7 @@ catp() {
   shift
 
   should_color || true
-  sed "s/^/$(COLOR=${_COLOR-} printfp "$prefix" '')/"
+  sed "s/^/$(COLOR=$__COLOR printfp "$prefix" '')/"
 }
 
 repeat() {
@@ -544,17 +593,17 @@ printferr() {
 
 logp() {
   should_color >&2 || true
-  COLOR=${_COLOR-} echop "$@" | humanpath >&2
+  COLOR=$__COLOR echop "$@" | humanpath >&2
 }
 
 logfp() {
   should_color >&2 || true
-  COLOR=${_COLOR-} printfp "$@" | humanpath >&2
+  COLOR=$__COLOR printfp "$@" | humanpath >&2
 }
 
 logpcat() {
   should_color >&2 || true
-  COLOR=${_COLOR-} catp "$@" | humanpath >&2
+  COLOR=$__COLOR catp "$@" | humanpath >&2
 }
 
 log() {
@@ -678,6 +727,13 @@ runtty() {
       echoerr "runtty: unsupported OS $(uname)"
       return 1
   esac
+}
+
+capcode() {
+  set +e
+  "$@"
+  code=$?
+  set -e
 }
 #!/bin/sh
 if [ "${LIB_MAKE-}" ]; then

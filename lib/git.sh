@@ -5,7 +5,7 @@ fi
 LIB_GIT=1
 . ./log.sh
 
-set_git_base() {
+detect_git_base() {
   if [ "${GIT_BASE+x}" = x ]; then
     return
   fi
@@ -31,7 +31,7 @@ set_git_base() {
 }
 
 is_changed() {
-  set_git_base
+  detect_git_base
   if [ -z "${GIT_BASE-}" ]; then
     return
   fi
@@ -40,14 +40,15 @@ is_changed() {
     [ -n "$(git ls-files --other --exclude-standard -- "$@")" ]
 }
 
-set_changed_files() {
-  set_git_base
+detect_changed_files() {
+  detect_git_base
 
   if [ -n "${CHANGED_FILES-}" ]; then
     return
   fi
 
-  CHANGED_FILES=./.changed-files
+  CHANGED_FILES=$(mktemp -d)/changed-files
+  trap changed_files_exittrap EXIT
   git ls-files --other --exclude-standard > "$CHANGED_FILES"
   if [ -n "${GIT_BASE-}" ]; then
     git diff --relative --name-only "$GIT_BASE" | filter_exists >> "$CHANGED_FILES"
@@ -58,9 +59,16 @@ set_changed_files() {
   logpcat changed <"$CHANGED_FILES"
 }
 
+changed_files_exittrap() {
+  rm -f "$CHANGED_FILES"
+}
+
 git_assert_clean() {
-  should_color || true
-  git ${_COLOR:+-c color.diff=always} diff --exit-code
+  if should_color; then
+    git -c color.diff=always diff --exit-code
+  else
+    git -c color.diff=never diff --exit-code
+  fi
 }
 
 filter_exists() {
@@ -98,7 +106,7 @@ search_up() {(
 )}
 
 xargsd() {
-  set_changed_files
+  detect_changed_files
 
   pattern="$1"
   shift

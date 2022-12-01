@@ -27,7 +27,7 @@ runjob() {(
   fi
 
   should_color || true
-  export COLOR=${_COLOR-}
+  export COLOR=$__COLOR
   FGCOLOR="$(get_rand_color "$jobname")"
   echop "$jobname^" "$*"
 
@@ -193,4 +193,15 @@ lockfile_ssh() {
 
 unlockfile_ssh() {
   ssh "$LOCKHOST" rm -f "$LOCKFILE_PID" "$LOCKFILE"
+}
+
+ci_waitjobs() {
+  capcode waitjobs
+  if [ "$code" = 0 -a -n "${CI-}" ]; then
+    capcode git_assert_clean
+  fi
+  if [ "$code" != 0 ]; then
+    notify "$code"
+    return "$code"
+  fi
 }

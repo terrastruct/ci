@@ -5,7 +5,7 @@ cd -- "$(dirname "$0")/lib"
 . ./notify.sh
 cd - >/dev/null
 
-set_git_base
+detect_git_base
 commits="$(git log --grep='fixup!' --format=%h ${GIT_BASE:+"$GIT_BASE..HEAD"})"
 if [ -n "$commits" ]; then
   echo "$commits" | FGCOLOR=1 logpcat 'fixup detected'
