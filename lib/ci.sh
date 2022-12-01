@@ -5,6 +5,8 @@ fi
 LIB_CI=1
 . ./log.sh
 . ./git.sh
+. ./job.sh
+. ./notify.sh
 
 ci_go_fmt() {
 	sh_c xargsd '\.go$' gofmt -s -w

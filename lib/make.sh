@@ -5,6 +5,7 @@ fi
 LIB_MAKE=1
 . ./log.sh
 . ./git.sh
+. ./ci.sh
 
 _make() {
   if [ "${CI:-}" ]; then
@@ -41,18 +42,10 @@ EOF
     # make -sj8 "$@"
   fi
 
-  set +e
-  make -sj8 "$@"
-  code="$?"
-  set -e
-  if [ "$code" -ne 0 ]; then
-    notify "$code"
+  detect_git_base
+  capcode make -sj8 "$@"
+  if [ "${CI_MAKE_ROOT-}" = 0 ]; then
     return "$code"
   fi
-  # Make sure nothing has changed
-  if [ -n "${CI-}" ] && ! git_assert_clean; then
-    notify 1
-    return 1
-  fi
-  notify 0
+  ci_waitjobs
 }
