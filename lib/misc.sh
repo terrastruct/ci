@@ -52,8 +52,8 @@ EOF
     TOC=$(echo "$TOC" | sed -E -e "/^ {0,$SKIP}-/d" -e "s/^$(repeat ' ' $((SKIP*2)))//")
   fi
   TOC_START=$(<"$1" grep -Fn '<!-- toc -->' | cut -d: -f1 | head -n1)
-  BEFORE_TOC=$(<"$1" head -n"$(( TOC_START ))")
-  AFTER_TOC=$(<"$1" tail +"$(( TOC_START+1 ))")
+  BEFORE_TOC=$(<"$1" head -n"$((TOC_START))")
+  AFTER_TOC=$(<"$1" tail +"$((TOC_START+1))")
   TOC_END=$(echo "$AFTER_TOC" | grep -nm 1 '^$' | cut -d: -f1 | head -n1)
   TOC_END=$((TOC_START+TOC_END))
   AFTER_TOC=$(<"$1" tail +"$TOC_END")
