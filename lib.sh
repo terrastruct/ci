@@ -458,7 +458,7 @@ should_color() {
     fi
   fi
 
-  if [ -t 1 ]; then
+  if [ -t 1 -a "${TERM-}" != dumb ]; then
     _COLOR=1
     return 0
   else
