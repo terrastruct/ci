@@ -20,3 +20,7 @@ docker_run() {
     -u "$(id -u):$(id -g)" \
     "$@"
 }
+
+md_toc() {
+  pandoc -s --toc --from gfm --to gfm | awk '/-/{f=1} {if (!NF) exit; print}'
+}
