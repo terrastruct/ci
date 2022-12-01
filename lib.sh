@@ -1016,6 +1016,14 @@ manpath() {
     echo "${MANPATH-}"
   fi
 }
+
+is_writable_dir() {
+  # The path has to exist for -w to succeed.
+  sh_c "mkdir -p '$1' 2>/dev/null" || true
+  if [ ! -w "$1" ]; then
+    return 1
+  fi
+}
 #!/bin/sh
 if [ "${LIB_TEST-}" ]; then
   return 0

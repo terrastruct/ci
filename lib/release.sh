@@ -3,6 +3,7 @@ if [ "${LIB_RELEASE-}" ]; then
   return 0
 fi
 LIB_RELEASE=1
+. ./log.sh
 
 goos() {
   case $1 in
@@ -41,5 +42,13 @@ manpath() {
     man -w
   else
     echo "${MANPATH-}"
+  fi
+}
+
+is_writable_dir() {
+  # The path has to exist for -w to succeed.
+  sh_c "mkdir -p '$1' 2>/dev/null" || true
+  if [ ! -w "$1" ]; then
+    return 1
   fi
 }
