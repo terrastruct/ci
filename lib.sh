@@ -358,7 +358,7 @@ runjob_filter() {(
   for i in $(seq "$min"); do
     job_el=$(sed -n "${i}p" "$tmpdir/jobname")
     regex_el=$(sed -n "${i}p" "$tmpdir/jobfilter")
-    if ! printf %s "$job_el" | grep -q "$regex_el"; then
+    if ! printf %s "$job_el" | grep -Eq "$regex_el"; then
       return 1
     fi
   done
