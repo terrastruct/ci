@@ -810,7 +810,7 @@ docker_run() {
 }
 
 pandoc_toc() {
-  pandoc --wrap=none -s --toc --from gfm --to gfm | awk '/-/{f=1} {if (!NF) exit; print}'
+  pandoc --wrap=none -s --toc --from gfm --to markdown | awk '/-/{f=1} {if (!NF) exit; print}'
 }
 
 tocsubst() {
@@ -837,7 +837,7 @@ EOF
 
   TOC=$(<"$1" pandoc_toc)
   if [ "$SKIP" -gt 0 ]; then
-    TOC=$(echo "$TOC" | sed -E -e "/^ {0,$SKIP}-/d" -e "s/^$(repeat ' ' $((SKIP*2)))//")
+    TOC=$(echo "$TOC" | sed -E -e "/^ {0,$((SKIP*2))}-/d" -e "s/^$(repeat ' ' $((SKIP*4)))//")
   fi
   TOC_START=$(<"$1" grep -Fn '<!-- toc -->' | cut -d: -f1 | head -n1)
   BEFORE_TOC=$(<"$1" head -n"$((TOC_START))")
