@@ -809,8 +809,23 @@ docker_run() {
     "$@"
 }
 
-md_toc() {
+pandoc_toc() {
   pandoc -s --toc --from gfm --to gfm | awk '/-/{f=1} {if (!NF) exit; print}'
+}
+
+tocsubst() {
+  SKIP=${2:-0}
+
+  TOC=$(sh_c "<$1 pandoc_toc" | sed -E -e "/^ {0,$SKIP}-/d" -e "s/^$(repeat ' ' $((SKIP*2)))//")
+  TOC_START=$(<"$1" grep -Fn '<!-- toc -->' | cut -d: -f1 | head -n1)
+  BEFORE_TOC=$(<"$1" head -n"$(( TOC_START ))")
+  AFTER_TOC=$(<"$1" tail +"$(( TOC_START+1 ))")
+  TOC_END=$(echo "$AFTER_TOC" | grep -nm 1 '^$' | cut -d: -f1 | head -n1)
+  TOC_END=$(( TOC_START + TOC_END ))
+  AFTER_TOC=$(<"$1" tail +"$(( TOC_END ))")
+  echo "$BEFORE_TOC" >"$1"
+  echo "$TOC" >>"$1"
+  echo "$AFTER_TOC" >>"$1"
 }
 #!/bin/sh
 if [ "${LIB_NOTIFY-}" ]; then
