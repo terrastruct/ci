@@ -24,7 +24,7 @@ ci_go_build() {
 }
 
 ci_go_test() {
-  go test "${TESTFLAGS:-./...}"
+  go test "${@:-./...}"
 }
 
 ci_waitjobs() {

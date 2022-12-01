@@ -127,13 +127,9 @@ waitjobs_sigtrap() {
 job_parseflags() {
   while flag_parse "$@"; do
     case "$FLAG" in
-      run)
-        flag_reqarg && shift "$FLAGSHIFT"
-        export JOBFILTER="$FLAGARG"
-        ;;
       h|help)
         cat <<EOF
-usage: $0 [--run=jobregex]
+usage: $0 jobregex
 EOF
         exit 0
         ;;
@@ -144,9 +140,7 @@ EOF
   done
   shift "$FLAGSHIFT"
 
-  if [ $# -gt 0 ]; then
-    flag_errusage "$0 does not accept any arguments"
-  fi
+  JOBFILTER=$*
 }
 
 # See https://unix.stackexchange.com/questions/22044/correct-locking-in-shell-scripts
