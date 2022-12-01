@@ -193,7 +193,8 @@ detect_git_base() {
 
   # Unfortunately --grep searches the whole commit message but we just want the header
   # searched. Should fix by using grep directly later.
-  export GIT_BASE="$(git log --merges --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
+  GIT_BASE="$(git log --merges --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
+  export GIT_BASE
   if [ -n "$GIT_BASE" ]; then
     echop lib/git.sh "GIT_BASE=$GIT_BASE"
   fi
