@@ -34,6 +34,9 @@ ci_waitjobs() {
     notify "$code"
     return "$code"
   fi
+  if [ -z "${CI-}" ]; then
+    nofixups
+  fi
   notify 0
   return 0
 }
