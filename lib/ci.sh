@@ -26,3 +26,16 @@ ci_go_build() {
 ci_go_test() {
   go test "${TESTFLAGS:-./...}"
 }
+
+ci_waitjobs() {
+  capcode waitjobs
+  if [ "$code" = 0 -a -n "${CI-}" ]; then
+    capcode git_assert_clean
+  fi
+  if [ "$code" != 0 ]; then
+    notify "$code"
+    return "$code"
+  fi
+  notify 0
+  return 0
+}

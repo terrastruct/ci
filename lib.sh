@@ -24,6 +24,19 @@ ci_go_build() {
 ci_go_test() {
   go test "${TESTFLAGS:-./...}"
 }
+
+ci_waitjobs() {
+  capcode waitjobs
+  if [ "$code" = 0 -a -n "${CI-}" ]; then
+    capcode git_assert_clean
+  fi
+  if [ "$code" != 0 ]; then
+    notify "$code"
+    return "$code"
+  fi
+  notify 0
+  return 0
+}
 #!/bin/sh
 if [ "${LIB_FLAG-}" ]; then
   return 0
@@ -462,17 +475,6 @@ lockfile_ssh() {
 
 unlockfile_ssh() {
   ssh "$LOCKHOST" rm -f "$LOCKFILE_PID" "$LOCKFILE"
-}
-
-ci_waitjobs() {
-  capcode waitjobs
-  if [ "$code" = 0 -a -n "${CI-}" ]; then
-    capcode git_assert_clean
-  fi
-  if [ "$code" != 0 ]; then
-    notify "$code"
-    return "$code"
-  fi
 }
 #!/bin/sh
 if [ "${LIB_LOG-}" ]; then

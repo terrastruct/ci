@@ -194,14 +194,3 @@ lockfile_ssh() {
 unlockfile_ssh() {
   ssh "$LOCKHOST" rm -f "$LOCKFILE_PID" "$LOCKFILE"
 }
-
-ci_waitjobs() {
-  capcode waitjobs
-  if [ "$code" = 0 -a -n "${CI-}" ]; then
-    capcode git_assert_clean
-  fi
-  if [ "$code" != 0 ]; then
-    notify "$code"
-    return "$code"
-  fi
-}
