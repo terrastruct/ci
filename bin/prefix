@@ -4,5 +4,4 @@ cd -- "$(dirname "$0")/../lib"
 . ./job.sh
 cd - >/dev/null
 
-runjob "$@" &
-waitjobs
+runjob "$@"

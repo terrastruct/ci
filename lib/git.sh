@@ -81,7 +81,7 @@ filter_exists() {
 }
 
 git_describe_ref() {
-  TAG="$(git describe 2> /dev/null || true)"
+  TAG="$(git describe --exact-match 2> /dev/null || true)"
   if [ -n "$TAG" ]; then
     _echo "$TAG"
   else
