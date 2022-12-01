@@ -31,7 +31,7 @@ runjob() {(
   FGCOLOR="$(get_rand_color "$jobname")"
   echop "$jobname^" "$*"
 
-  # We need to make sure we exit with a non zero exit if the command fails.
+  # We need to make sure we return with a non zero code if the command fails.
   # /bin/sh does not support -o pipefail unfortunately.
   job_tmpdir="$(mktemp -d)"
   stdout="$job_tmpdir/stdout"

@@ -12,3 +12,5 @@ if [ -n "$commits" ]; then
   notify 1
   exit 1
 fi
+
+notify 0
