@@ -413,7 +413,7 @@ job_parseflags() {
         cat <<EOF
 usage: $0 jobregex
 EOF
-        exit 0
+        return 0
         ;;
       *)
         flag_errusage "unrecognized flag $RAWFLAG"
@@ -814,7 +814,27 @@ pandoc_toc() {
 }
 
 tocsubst() {
-  SKIP=${2:-0}
+  while flag_parse "$@"; do
+    case "$FLAG" in
+      h|help)
+        help
+        cat <<EOF
+usage: $0 [--skip n] README.md
+EOF
+        return 0
+        ;;
+      skip)
+        flag_nonemptyarg && shift "$FLAGSHIFT"
+        SKIP=$FLAGARG
+        ;;
+      *)
+        flag_errusage "unrecognized flag $FLAGRAW"
+        ;;
+    esac
+  done
+  shift "$FLAGSHIFT"
+
+  SKIP=${SKIP:-0}
 
   TOC=$(sh_c "<$1 pandoc_toc" | sed -E -e "/^ {0,$SKIP}-/d" -e "s/^$(repeat ' ' $((SKIP*2)))//")
   TOC_START=$(<"$1" grep -Fn '<!-- toc -->' | cut -d: -f1 | head -n1)

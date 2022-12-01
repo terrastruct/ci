@@ -131,7 +131,7 @@ job_parseflags() {
         cat <<EOF
 usage: $0 jobregex
 EOF
-        exit 0
+        return 0
         ;;
       *)
         flag_errusage "unrecognized flag $RAWFLAG"
