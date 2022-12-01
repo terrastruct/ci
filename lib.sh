@@ -809,9 +809,16 @@ docker_run() {
     "$@"
 }
 
-pandoc_toc() {
+pandoc_toc() {(
+  if [ -n "${CI-}" ] && ! command -v pandoc >/dev/null; then
+    VERSION=2.19.2
+    ARCH=$(arch)
+    sh_c curl -OL "https://github.com/jgm/pandoc/releases/download/$VERSION/pandoc-$VERSION-1-$ARCH.deb"
+    sh_c sudo dpkg -i "pandoc-$VERSION-1-$ARCH.deb"
+    sh_c rm -f "pandoc-$VERSION-1-$ARCH.deb"
+  fi
   pandoc --wrap=none -s --toc --from gfm --to gfm | awk '/-/{f=1} {if (!NF) exit; print}'
-}
+)}
 
 tocsubst() {
   while flag_parse "$@"; do
