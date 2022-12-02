@@ -928,7 +928,7 @@ notify() {
   if [ -n "${DISCORD_WEBHOOK_URL-}" ]; then
     msg=""
     if [ "$code" -ne 0 ]; then
-      msg="$msg @maintainers"
+      msg="$msg @here"
     fi
     msg="$msg\`\`\`
 $emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
@@ -956,7 +956,10 @@ pick() {
   shift
 
   seed_file="$(mktemp)"
-  echo "$seed" > "$seed_file"
+  echo "$seed" >"$seed_file"
+  # We add 16 more bytes to the seed file for sufficient entropy. Otherwise Cygwin's sort
+  # for example complains and I'm sure there are more platforms that would too.
+  echo "================" >"$seed_file"
 
   while [ $# -gt 0 ]; do
     echo "$1"
@@ -973,27 +976,28 @@ LIB_RELEASE=1
 
 goos() {
   case $1 in
-    macos) echo darwin ;;
-    *) echo $1 ;;
+    macos) echo darwin;;
+    *) echo $1;;
   esac
 }
 
 os() {
   uname=$(uname)
   case $uname in
-    Linux) echo linux ;;
-    Darwin) echo macos ;;
-    FreeBSD) echo freebsd ;;
-    *) echo "$uname" ;;
+    Linux) echo linux;;
+    Darwin) echo macos;;
+    FreeBSD) echo freebsd;;
+    CYGWIN_NT*) echo windows;;
+    *) echo "$uname";;
   esac
 }
 
 arch() {
   uname_m=$(uname -m)
   case $uname_m in
-    aarch64) echo arm64 ;;
-    x86_64) echo amd64 ;;
-    *) echo "$uname_m" ;;
+    aarch64) echo arm64;;
+    x86_64) echo amd64;;
+    *) echo "$uname_m";;
   esac
 }
 
