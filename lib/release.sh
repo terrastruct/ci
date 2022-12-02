@@ -18,6 +18,7 @@ os() {
     Linux) echo linux ;;
     Darwin) echo macos ;;
     FreeBSD) echo freebsd ;;
+    CYGWIN_NT*) echo windows ;;
     *) echo "$uname" ;;
   esac
 }
