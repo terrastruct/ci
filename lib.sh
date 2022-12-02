@@ -536,11 +536,16 @@ _echo() {
   printf '%s\n' "$*"
 }
 
-get_rand_color() {
   # 1-6 are regular and 9-14 are bright.
-  # 1,2 and 9,10 are red and green but we use those for success and failure.
-  pick "$*" 1 2 3 4 5 6 \
-            9 10 11 12 13 14
+get_rand_color() {
+  colors=""
+  ncolors=$(command tput colors)
+  if [ "$ncolors" -ge 8 ]; then
+    colors="$colors 1 2 3 4 5 6"
+  elif [ "$ncolors" -ge 16 ]; then
+    colors="$colors 9 10 11 12 13 14"
+  fi
+  pick "$*" $colors
 }
 
 echop() {
