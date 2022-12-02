@@ -962,8 +962,9 @@ pick() {
 
   seed_file="$(mktemp)"
   echo "$seed" >"$seed_file"
-  # We add 16 more bytes to the seed file for sufficient entropy. Otherwise Cygwin's sort
-  # for example complains and I'm sure there are more platforms that would too.
+  # We add 16 more bytes to the seed file for sufficient entropy. Otherwise both Cygwin's
+  # and MinGW's sort for example complains about the lack of entropy on stderr and writes
+  # nothing to stdout. I'm sure there are more platforms that would too.
   echo "================" >"$seed_file"
 
   while [ $# -gt 0 ]; do
@@ -992,7 +993,7 @@ os() {
     Linux) echo linux;;
     Darwin) echo macos;;
     FreeBSD) echo freebsd;;
-    CYGWIN_NT*) echo windows;;
+    CYGWIN_NT*|MINGW32_NT*) echo windows;;
     *) echo "$uname";;
   esac
 }
