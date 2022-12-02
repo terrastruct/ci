@@ -925,17 +925,17 @@ notify() {
   # 4. Discord handles spacing in and around code blocks really weirdly. If $GITHUB_JOB_URL
   #    has a newline between it and the end of the code block, it's rendered as a separate
   #    paragraph instead of just below the code block.
-  if [ "${DISCORD_WEBHOOK_URL:-}" ]; then
-    msg="---"
+  if [ -n "${DISCORD_WEBHOOK_URL-}" ]; then
+    msg=""
     if [ "$code" -ne 0 ]; then
-      msg="$msg @here"
+      msg="$msg @maintainers"
     fi
     msg="$msg\`\`\`
 $emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
 \`\`\`<$GITHUB_JOB_URL>"
     json="{\"content\":$(printf %s "$msg" | jq -sR .)}"
     url="$DISCORD_WEBHOOK_URL"
-  elif [ "${SLACK_WEBHOOK_URL:-}" ]; then
+  elif [ -n "${SLACK_WEBHOOK_URL-}" ]; then
     msg="\`\`\`
 $emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
    $GITHUB_JOB_URL
@@ -951,25 +951,16 @@ if [ "${LIB_RAND-}" ]; then
 fi
 LIB_RAND=1
 
-rand() {
-  seed="$1"
-  range="$2"
-
-  seed_file="$(mktemp)"
-  _echo "$seed" | md5sum > "$seed_file"
-  shuf -i "$range" -n 1 --random-source="$seed_file"
-}
-
 pick() {
-  if ! command -v shuf >/dev/null || ! command -v md5sum >/dev/null; then
-    eval "_echo \"\$3\""
-    return
-  fi
-
   seed="$1"
   shift
-  i="$(rand "$seed" "1-$#")"
-  eval "_echo \"\$$i\""
+
+  seed_file="$(mktemp)"
+  _echo "$seed" > "$seed_file"
+
+  for i in $(seq $#); do
+    eval "_echo \"\$$i\""
+  done | sort --sort=random --random-source="$seed_file" | head -n1
 }
 #!/bin/sh
 if [ "${LIB_RELEASE-}" ]; then

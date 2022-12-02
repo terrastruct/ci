@@ -62,17 +62,17 @@ notify() {
   # 4. Discord handles spacing in and around code blocks really weirdly. If $GITHUB_JOB_URL
   #    has a newline between it and the end of the code block, it's rendered as a separate
   #    paragraph instead of just below the code block.
-  if [ "${DISCORD_WEBHOOK_URL:-}" ]; then
-    msg="---"
+  if [ -n "${DISCORD_WEBHOOK_URL-}" ]; then
+    msg=""
     if [ "$code" -ne 0 ]; then
-      msg="$msg @here"
+      msg="$msg @maintainers"
     fi
     msg="$msg\`\`\`
 $emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
 \`\`\`<$GITHUB_JOB_URL>"
     json="{\"content\":$(printf %s "$msg" | jq -sR .)}"
     url="$DISCORD_WEBHOOK_URL"
-  elif [ "${SLACK_WEBHOOK_URL:-}" ]; then
+  elif [ -n "${SLACK_WEBHOOK_URL-}" ]; then
     msg="\`\`\`
 $emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
    $GITHUB_JOB_URL
