@@ -10,9 +10,12 @@ pick() {
   shift
 
   seed_file="$(mktemp)"
-  _echo "$seed" > "$seed_file"
+  echo "$seed" > "$seed_file"
 
-  for i in $(seq $#); do
-    eval "_echo \"\$$i\""
-  done | sort --sort=random --random-source="$seed_file" | head -n1
+  while [ $# -gt 0 ]; do
+    echo "$1"
+    shift
+  done \
+    | sort --sort=random --random-source="$seed_file" \
+    | head -n1
 }

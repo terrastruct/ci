@@ -65,7 +65,7 @@ notify() {
   if [ -n "${DISCORD_WEBHOOK_URL-}" ]; then
     msg=""
     if [ "$code" -ne 0 ]; then
-      msg="$msg @maintainers"
+      msg="$msg @here"
     fi
     msg="$msg\`\`\`
 $emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
