@@ -6,7 +6,7 @@ cd -- "$(dirname "$0")"
 cd - >/dev/null
 
 git() {
-  gitpure "$@"
+  git_pure "$@"
 }
 
 case1() {

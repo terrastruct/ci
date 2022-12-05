@@ -145,7 +145,7 @@ https://cyborg-ts:$GITHUB_TOKEN@github.com
 EOF
 }
 
-gitpure() {
+git_pure() {
   if [ -z "${GIT_CONFIG_PURE-}" ]; then
     GIT_CONFIG_PURE="$(mktemp -d)/gitconfig-pure"
     export GIT_CONFIG_PURE
