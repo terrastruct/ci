@@ -6,7 +6,7 @@ cd -- "$(dirname "$0")"
 cd - >/dev/null
 
 git() {
-  git_nosystem "$@"
+  gitpure "$@"
 }
 
 case1() {

@@ -322,19 +322,24 @@ https://cyborg-ts:$GITHUB_TOKEN@github.com
 EOF
 }
 
-git_nosystem() {
-  if [ -z "${_GIT_CONFIG_GLOBAL-}" ]; then
-    _GIT_CONFIG_GLOBAL="$(mktemp -d)/gitconfig"
-    export _GIT_CONFIG_GLOBAL
+gitpure() {
+  if [ -z "${GIT_CONFIG_PURE-}" ]; then
+    GIT_CONFIG_PURE="$(mktemp -d)/gitconfig-pure"
+    export GIT_CONFIG_PURE
   fi
 
-  if [ -z "${__GIT_CONFIG_GLOBAL-}" ]; then
-    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=$_GIT_CONFIG_GLOBAL command git config --global init.defaultBranch master
-    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=$_GIT_CONFIG_GLOBAL command git config --global user.name "Cyborg Tstruct"
-    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=$_GIT_CONFIG_GLOBAL command git config --global user.email "info+cyborg@terrastruct.com"
-    export __GIT_CONFIG_GLOBAL=1
+  if [ -z "${_GIT_CONFIG_PURE-}" ]; then
+    if command -v diff-highlight >/dev/null; then
+      GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global pager.log 'diff-highlight | less'
+      GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global pager.show 'diff-highlight | less'
+      GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global pager.diff 'diff-highlight | less'
+    fi
+    GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global init.defaultBranch master
+    GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global user.name "Cyborg Tstruct"
+    GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global user.email "info+cyborg@terrastruct.com"
+    export _GIT_CONFIG_PURE=1
   fi
-  GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL="$_GIT_CONFIG_GLOBAL" command git "$@"
+  GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git "$@"
 }
 #!/bin/sh
 if [ "${LIB_JOB-}" ]; then
@@ -1149,31 +1154,30 @@ gitdiff_vars() {
   tmpdir="$(mktemp -d)"
   eval "_echo \"\$$1\"" > "$tmpdir/$1"
   eval "_echo \"\$$2\"" > "$tmpdir/$2"
-  set +e
-  gitdiff "$tmpdir/$1" "$tmpdir/$2"
-  code="$?"
-  set -e
+  capcode gitdiff "$tmpdir/$1" "$tmpdir/$2"
   if [ $code -eq 0 ]; then
     rm -r "$tmpdir"
   fi
   return $code
 }
 
-gitdiff() {(
-  mkfifo "$tmpdir/fifo"
-  if command -v diff-highlight >/dev/null; then
-    # https://github.com/git/git/blob/master/contrib/diff-highlight/README
-    cat "$tmpdir/fifo" | diff-highlight | tail -n +3 &
-  else
-    cat "$tmpdir/fifo" | tail -n +3 &
-  fi
-  trap waitjobs EXIT
+gitdiff() {
   should_color || true
-  # 1. If _COLOR is set we want colors.
-  # 2. Use the best diff algorithm.
-  # 3. Highlight trailing whitespace.
-  git_nosystem ${_COLOR:+-c color.diff=always} diff \
-    --diff-algorithm=histogram \
-    --ws-error-highlight=all \
-    --no-index "$@" >"$tmpdir/fifo"
-)}
+  _f() {
+    # 1. If _COLOR is set we want colors.
+    # 2. Use the best diff algorithm.
+    # 3. Highlight trailing whitespace.
+    gitpure ${_COLOR:+-c color.diff=always} diff \
+      --diff-algorithm=histogram \
+      --ws-error-highlight=all \
+      --no-index "$@"
+  }
+  # note: Even though we set diff-highlight in the global git config in gitpure,
+  # we still have to manually use diff-highlight here as git won't use its pager as
+  # we're not sending to a tty.
+  if command -v diff-highlight >/dev/null; then
+    _f "$@" | diff-highlight | tail -n +3
+  else
+    _f "$@" | tail -n +3
+  fi
+}

@@ -145,17 +145,22 @@ https://cyborg-ts:$GITHUB_TOKEN@github.com
 EOF
 }
 
-git_nosystem() {
-  if [ -z "${_GIT_CONFIG_GLOBAL-}" ]; then
-    _GIT_CONFIG_GLOBAL="$(mktemp -d)/gitconfig"
-    export _GIT_CONFIG_GLOBAL
+gitpure() {
+  if [ -z "${GIT_CONFIG_PURE-}" ]; then
+    GIT_CONFIG_PURE="$(mktemp -d)/gitconfig-pure"
+    export GIT_CONFIG_PURE
   fi
 
-  if [ -z "${__GIT_CONFIG_GLOBAL-}" ]; then
-    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=$_GIT_CONFIG_GLOBAL command git config --global init.defaultBranch master
-    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=$_GIT_CONFIG_GLOBAL command git config --global user.name "Cyborg Tstruct"
-    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=$_GIT_CONFIG_GLOBAL command git config --global user.email "info+cyborg@terrastruct.com"
-    export __GIT_CONFIG_GLOBAL=1
+  if [ -z "${_GIT_CONFIG_PURE-}" ]; then
+    if command -v diff-highlight >/dev/null; then
+      GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global pager.log 'diff-highlight | less'
+      GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global pager.show 'diff-highlight | less'
+      GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global pager.diff 'diff-highlight | less'
+    fi
+    GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global init.defaultBranch master
+    GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global user.name "Cyborg Tstruct"
+    GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global user.email "info+cyborg@terrastruct.com"
+    export _GIT_CONFIG_PURE=1
   fi
-  GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL="$_GIT_CONFIG_GLOBAL" command git "$@"
+  GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git "$@"
 }
