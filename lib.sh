@@ -1079,13 +1079,23 @@ is_writable_dir() {
 }
 
 ensure_prefix() {
-  ensure_os
-  ensure_arch
-  if [ -z "${PREFIX-}" -a "$OS" = macos -a "$ARCH" = arm64 ]; then
-    # M1 Mac's do not allow modifications to /usr/local even with sudo.
-    PREFIX=$HOME/.local
+  if [ -n "${PREFIX-}" ]; then
+    return
   fi
-  PREFIX=${PREFIX:-/usr/local}
+  # The reason for checking whether bin is writable is that on macOS you have /usr/local
+  # owned by root but you don't need root to write to its subdirectories which is all we
+  # need to do.
+  if ! is_writable_dir "/usr/local/bin"; then
+    # This also handles M1 Mac's which do not allow modifications to /usr/local even
+    # with sudo.
+    PREFIX=$HOME/.local
+  else
+    PREFIX=/usr/local
+  fi
+}
+
+ensure_prefix_sh_c() {
+  ensure_prefix
 
   sh_c="sh_c"
   # The reason for checking whether bin is writable is that on macOS you have /usr/local
