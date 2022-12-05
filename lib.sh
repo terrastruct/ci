@@ -300,7 +300,7 @@ xargsd() {
 
 nofixups() {
   ensure_git_base
-  if [ "$(git_commit_count)" -eq 0 ]; then
+  if [ "$(git_commit_count)" -lt 2 ]; then
     return
   fi
   commits="$(git log --grep='fixup!' --format=%h ${GIT_BASE:+"$GIT_BASE..HEAD"})"
@@ -311,7 +311,8 @@ nofixups() {
 }
 
 git_commit_count() {
-  git rev-list HEAD --count 2>/dev/null || echo "0"
+  commit_count=$(git rev-list HEAD --count 2>/dev/null) || true
+  echo "${commit_count:-0}"
 }
 
 configure_github_token() {
@@ -319,6 +320,21 @@ configure_github_token() {
   cat > ~/.git-credentials <<EOF
 https://cyborg-ts:$GITHUB_TOKEN@github.com
 EOF
+}
+
+git_nosystem() {
+  if [ -z "${_GIT_CONFIG_GLOBAL-}" ]; then
+    _GIT_CONFIG_GLOBAL="$(mktemp -d)/gitconfig"
+    export _GIT_CONFIG_GLOBAL
+  fi
+
+  if [ -z "${__GIT_CONFIG_GLOBAL-}" ]; then
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=$_GIT_CONFIG_GLOBAL command git config --global init.defaultBranch master
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=$_GIT_CONFIG_GLOBAL command git config --global user.name "Cyborg Tstruct"
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=$_GIT_CONFIG_GLOBAL command git config --global user.email "info+cyborg@terrastruct.com"
+    export __GIT_CONFIG_GLOBAL=1
+  fi
+  GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL="$_GIT_CONFIG_GLOBAL" command git "$@"
 }
 #!/bin/sh
 if [ "${LIB_JOB-}" ]; then
@@ -459,6 +475,7 @@ EOF
       x)
         flag_noarg && shift "$FLAGSHIFT"
         set -x
+        export DEBUG=1
         ;;
       *)
         flag_errusage "unrecognized flag $FLAGRAW"
@@ -468,7 +485,7 @@ EOF
   shift "$FLAGSHIFT"
 
   if [ $# -gt 0 ]; then
-    JOBFILTER=$*
+    JOBFILTER=$(strjoin / "$@")
     export JOBFILTER
   fi
 }
@@ -571,16 +588,20 @@ _echo() {
   printf '%s\n' "$*"
 }
 
-  # 1-6 are regular and 9-14 are bright.
 get_rand_color() {
-  colors=""
-  ncolors=$(TERM=${TERM:-xterm-256color} command tput colors)
-  if [ "$ncolors" -ge 8 ]; then
-    colors="$colors 1 2 3 4 5 6"
-  elif [ "$ncolors" -ge 16 ]; then
-    colors="$colors 9 10 11 12 13 14"
+  if [ "${TERM_COLORS+x}" != x ]; then
+    TERM_COLORS=""
+    export TERM_COLORS
+    ncolors=$(TERM=${TERM:-xterm-256color} command tput colors)
+    if [ "$ncolors" -ge 8 ]; then
+      # 1-6 are regular
+      TERM_COLORS="$TERM_COLORS 1 2 3 4 5 6"
+    elif [ "$ncolors" -ge 16 ]; then
+      # 9-14 are bright.
+      TERM_COLORS="$TERM_COLORS 9 10 11 12 13 14"
+    fi
   fi
-  pick "$*" $colors
+  pick "$*" $TERM_COLORS
 }
 
 echop() {
@@ -782,6 +803,10 @@ capcode() {
   code=$?
   set -e
 }
+
+strjoin() {
+  (IFS="$1"; shift; echo "$*")
+}
 #!/bin/sh
 if [ "${LIB_MAKE-}" ]; then
   return 0
@@ -977,7 +1002,7 @@ pick() {
   #
   # We also limit to a max of 32 bytes as otherwise macOS's sort complains that the random
   # seed is too large. Probably more platforms too.
-  ( echo "$seed" && echo "================================" ) | head -c64 >"$seed_file"
+  (echo "$seed" && echo "================================") | head -c32 >"$seed_file"
 
   while [ $# -gt 0 ]; do
     echo "$1"
@@ -1147,7 +1172,7 @@ gitdiff() {(
   # 1. If _COLOR is set we want colors.
   # 2. Use the best diff algorithm.
   # 3. Highlight trailing whitespace.
-  GIT_CONFIG_NOSYSTEM=1 HOME= git ${_COLOR:+-c color.diff=always} diff \
+  git_nosystem ${_COLOR:+-c color.diff=always} diff \
     --diff-algorithm=histogram \
     --ws-error-highlight=all \
     --no-index "$@" >"$tmpdir/fifo"

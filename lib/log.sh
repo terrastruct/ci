@@ -52,16 +52,20 @@ _echo() {
   printf '%s\n' "$*"
 }
 
-  # 1-6 are regular and 9-14 are bright.
 get_rand_color() {
-  colors=""
-  ncolors=$(TERM=${TERM:-xterm-256color} command tput colors)
-  if [ "$ncolors" -ge 8 ]; then
-    colors="$colors 1 2 3 4 5 6"
-  elif [ "$ncolors" -ge 16 ]; then
-    colors="$colors 9 10 11 12 13 14"
+  if [ "${TERM_COLORS+x}" != x ]; then
+    TERM_COLORS=""
+    export TERM_COLORS
+    ncolors=$(TERM=${TERM:-xterm-256color} command tput colors)
+    if [ "$ncolors" -ge 8 ]; then
+      # 1-6 are regular
+      TERM_COLORS="$TERM_COLORS 1 2 3 4 5 6"
+    elif [ "$ncolors" -ge 16 ]; then
+      # 9-14 are bright.
+      TERM_COLORS="$TERM_COLORS 9 10 11 12 13 14"
+    fi
   fi
-  pick "$*" $colors
+  pick "$*" $TERM_COLORS
 }
 
 echop() {
@@ -262,4 +266,8 @@ capcode() {
   "$@"
   code=$?
   set -e
+}
+
+strjoin() {
+  (IFS="$1"; shift; echo "$*")
 }

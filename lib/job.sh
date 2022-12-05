@@ -139,6 +139,7 @@ EOF
       x)
         flag_noarg && shift "$FLAGSHIFT"
         set -x
+        export DEBUG=1
         ;;
       *)
         flag_errusage "unrecognized flag $FLAGRAW"
@@ -148,7 +149,7 @@ EOF
   shift "$FLAGSHIFT"
 
   if [ $# -gt 0 ]; then
-    JOBFILTER=$*
+    JOBFILTER=$(strjoin / "$@")
     export JOBFILTER
   fi
 }

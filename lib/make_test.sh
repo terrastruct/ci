@@ -5,6 +5,10 @@ cd -- "$(dirname "$0")"
 . ./make.sh
 cd - >/dev/null
 
+git() {
+  git_nosystem "$@"
+}
+
 case1() {
   tmpdir=$(mktemp -d)
   cd "$tmpdir"

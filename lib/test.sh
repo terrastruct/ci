@@ -56,7 +56,7 @@ gitdiff() {(
   # 1. If _COLOR is set we want colors.
   # 2. Use the best diff algorithm.
   # 3. Highlight trailing whitespace.
-  GIT_CONFIG_NOSYSTEM=1 HOME= git ${_COLOR:+-c color.diff=always} diff \
+  git_nosystem ${_COLOR:+-c color.diff=always} diff \
     --diff-algorithm=histogram \
     --ws-error-highlight=all \
     --no-index "$@" >"$tmpdir/fifo"

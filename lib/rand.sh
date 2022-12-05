@@ -17,7 +17,7 @@ pick() {
   #
   # We also limit to a max of 32 bytes as otherwise macOS's sort complains that the random
   # seed is too large. Probably more platforms too.
-  ( echo "$seed" && echo "================================" ) | head -c64 >"$seed_file"
+  (echo "$seed" && echo "================================") | head -c32 >"$seed_file"
 
   while [ $# -gt 0 ]; do
     echo "$1"

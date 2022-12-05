@@ -123,7 +123,7 @@ xargsd() {
 
 nofixups() {
   ensure_git_base
-  if [ "$(git_commit_count)" -eq 0 ]; then
+  if [ "$(git_commit_count)" -lt 2 ]; then
     return
   fi
   commits="$(git log --grep='fixup!' --format=%h ${GIT_BASE:+"$GIT_BASE..HEAD"})"
@@ -134,7 +134,8 @@ nofixups() {
 }
 
 git_commit_count() {
-  git rev-list HEAD --count 2>/dev/null || echo "0"
+  commit_count=$(git rev-list HEAD --count 2>/dev/null) || true
+  echo "${commit_count:-0}"
 }
 
 configure_github_token() {
@@ -142,4 +143,19 @@ configure_github_token() {
   cat > ~/.git-credentials <<EOF
 https://cyborg-ts:$GITHUB_TOKEN@github.com
 EOF
+}
+
+git_nosystem() {
+  if [ -z "${_GIT_CONFIG_GLOBAL-}" ]; then
+    _GIT_CONFIG_GLOBAL="$(mktemp -d)/gitconfig"
+    export _GIT_CONFIG_GLOBAL
+  fi
+
+  if [ -z "${__GIT_CONFIG_GLOBAL-}" ]; then
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=$_GIT_CONFIG_GLOBAL command git config --global init.defaultBranch master
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=$_GIT_CONFIG_GLOBAL command git config --global user.name "Cyborg Tstruct"
+    GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=$_GIT_CONFIG_GLOBAL command git config --global user.email "info+cyborg@terrastruct.com"
+    export __GIT_CONFIG_GLOBAL=1
+  fi
+  GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL="$_GIT_CONFIG_GLOBAL" command git "$@"
 }
