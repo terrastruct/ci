@@ -55,7 +55,7 @@ _echo() {
   # 1-6 are regular and 9-14 are bright.
 get_rand_color() {
   colors=""
-  ncolors=$(command tput colors)
+  ncolors=$(TERM=${TERM:-xterm-256color} command tput colors)
   if [ "$ncolors" -ge 8 ]; then
     colors="$colors 1 2 3 4 5 6"
   elif [ "$ncolors" -ge 16 ]; then
