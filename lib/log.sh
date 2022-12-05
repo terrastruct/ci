@@ -80,14 +80,12 @@ printfp() {(
   prefix="$1"
   shift
 
-  if [ -z "${FGCOLOR-}" ]; then
-    FGCOLOR="$(get_rand_color "$prefix")"
-  fi
+  _FGCOLOR=${FGCOLOR:-$(get_rand_color "$prefix")}
   should_color || true
   if [ $# -eq 0 ]; then
-    printf '%s' "$(COLOR=$__COLOR setaf "$FGCOLOR" "$prefix")"
+    printf '%s' "$(COLOR=$__COLOR setaf "$_FGCOLOR" "$prefix")"
   else
-    printf '%s: %s\n' "$(COLOR=$__COLOR setaf "$FGCOLOR" "$prefix")" "$(printf "$@")"
+    printf '%s: %s\n' "$(COLOR=$__COLOR setaf "$_FGCOLOR" "$prefix")" "$(printf "$@")"
   fi
 )}
 

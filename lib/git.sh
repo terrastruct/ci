@@ -5,12 +5,18 @@ fi
 LIB_GIT=1
 . ./log.sh
 
-detect_git_base() {
+ensure_git_base() {
   if [ "${GIT_BASE+x}" = x ]; then
     return
   fi
 
   if [ -n "${CI_FORCE-}" ]; then
+    return
+  fi
+
+  if [ "$(git_commit_count)" -lt 2 ]; then
+    GIT_BASE=
+    export GIT_BASE
     return
   fi
 
@@ -27,12 +33,12 @@ detect_git_base() {
   GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
   export GIT_BASE
   if [ -n "$GIT_BASE" ]; then
-    echop lib/git.sh "GIT_BASE=$GIT_BASE"
+    echop "GIT_BASE=$GIT_BASE"
   fi
 }
 
 is_changed() {
-  detect_git_base
+  ensure_git_base
   if [ -z "${GIT_BASE-}" ]; then
     return
   fi
@@ -41,8 +47,8 @@ is_changed() {
     [ -n "$(git ls-files --other --exclude-standard -- "$@")" ]
 }
 
-detect_changed_files() {
-  detect_git_base
+ensure_changed_files() {
+  ensure_git_base
 
   if [ -n "${CHANGED_FILES-}" ]; then
     return
@@ -107,7 +113,7 @@ search_up() {(
 )}
 
 xargsd() {
-  detect_changed_files
+  ensure_changed_files
 
   pattern="$1"
   shift
@@ -116,10 +122,24 @@ xargsd() {
 }
 
 nofixups() {
-  detect_git_base
+  ensure_git_base
+  if [ "$(git_commit_count)" -eq 0 ]; then
+    return
+  fi
   commits="$(git log --grep='fixup!' --format=%h ${GIT_BASE:+"$GIT_BASE..HEAD"})"
   if [ -n "$commits" ]; then
     echo "$commits" | FGCOLOR=1 logpcat 'fixup detected'
     return 1
   fi
+}
+
+git_commit_count() {
+  git rev-list HEAD --count 2>/dev/null || echo "0"
+}
+
+configure_github_token() {
+  git config --global credential.helper store
+  cat > ~/.git-credentials <<EOF
+https://cyborg-ts:$GITHUB_TOKEN@github.com
+EOF
 }

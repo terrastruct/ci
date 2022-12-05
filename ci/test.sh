@@ -8,4 +8,5 @@ cd - >/dev/null
 job_parseflags "$@"
 runjob log ./lib/log_test.sh &
 runjob flag ./lib/flag_test.sh &
+runjob make ./lib/make_test.sh &
 waitjobs

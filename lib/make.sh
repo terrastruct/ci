@@ -8,43 +8,19 @@ LIB_MAKE=1
 . ./ci.sh
 
 _make() {
-  if [ "${CI:-}" ]; then
-    if ! is_changed .; then
-      return
-    fi
-    if [ "${GITHUB_TOKEN:-}" ]; then
-      git config --global credential.helper store
-      cat > ~/.git-credentials <<EOF
-https://cyborg-ts:$GITHUB_TOKEN@github.com
-EOF
-    fi
-    git submodule update --init --recursive
+  if [ "${CI:-}" ] && ! is_changed .; then
+    return
   fi
-  if [ -z "${MAKE_LOG:-}" ]; then
+  if [ -z "${CI_MAKE_ROOT-}" ]; then
     CI_MAKE_ROOT=1
-    export MAKE_LOG="./.make-log"
-    # set +e
-    # if [ -t 1 ]; then
-    #   # runtty is necessary to allow make to write its output unbuffered. Otherwise the
-    #   # output is printed in surges as the write buffer is exceeded rather than a continous
-    #   # stream. Remove the runtty prefix to experience the laggy behaviour without it.
-    #   runtty make -sj8 "$@" \
-    #     | tee /dev/stderr "$MAKE_LOG" \
-    #     | stripansi > "$MAKE_LOG.txt"
-    # else
-    #   make -sj8 "$@" \
-    #     | tee /dev/stderr "$MAKE_LOG" \
-    #     | stripansi > "$MAKE_LOG.txt"
-    # fi
   else
     CI_MAKE_ROOT=0
-    # set +e
-    # make -sj8 "$@"
   fi
 
-  detect_git_base
+  ensure_git_base
   capcode make -sj8 "$@"
-  if [ "${CI_MAKE_ROOT-}" = 0 ]; then
+  if [ "$code" != 0 ]; then
+    notify "$code"
     return "$code"
   fi
   ci_waitjobs

@@ -6,7 +6,7 @@ cd -- "$(dirname "$0")/../lib"
 cd - >/dev/null
 PATH="$(cd -- "$(dirname "$0")" && pwd)/../bin:$PATH"
 
-detect_changed_files
+ensure_changed_files
 gomod_path="$(search_up go.mod || true)"
 if [ "$gomod_path" ]; then
   export CI_FMT_GO_MODULE=1

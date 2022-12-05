@@ -10,11 +10,14 @@ pick() {
   shift
 
   seed_file="$(mktemp)"
-  echo "$seed" >"$seed_file"
-  # We add 16 more bytes to the seed file for sufficient entropy. Otherwise both Cygwin's
+
+  # We add 32 more bytes to the seed file for sufficient entropy. Otherwise both Cygwin's
   # and MinGW's sort for example complains about the lack of entropy on stderr and writes
   # nothing to stdout. I'm sure there are more platforms that would too.
-  echo "================" >"$seed_file"
+  #
+  # We also limit to a max of 32 bytes as otherwise macOS's sort complains that the random
+  # seed is too large. Probably more platforms too.
+  ( echo "$seed" && echo "================================" ) | head -c64 >"$seed_file"
 
   while [ $# -gt 0 ]; do
     echo "$1"

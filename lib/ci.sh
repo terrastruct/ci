@@ -30,16 +30,21 @@ ci_go_test() {
 }
 
 ci_waitjobs() {
-  capcode waitjobs
-  if [ "$code" = 0 -a -n "${CI-}" ]; then
-    capcode git_assert_clean
+  if [ -z "${CI-}" ]; then
+    waitjobs
+    nofixups
+    return 0
   fi
+
+  capcode waitjobs
   if [ "$code" != 0 ]; then
     notify "$code"
     return "$code"
   fi
-  if [ -z "${CI-}" ]; then
-    nofixups
+  capcode git_assert_clean
+  if [ "$code" != 0 ]; then
+    notify "$code"
+    return "$code"
   fi
   notify 0
   return 0

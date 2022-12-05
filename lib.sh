@@ -26,16 +26,21 @@ ci_go_test() {
 }
 
 ci_waitjobs() {
-  capcode waitjobs
-  if [ "$code" = 0 -a -n "${CI-}" ]; then
-    capcode git_assert_clean
+  if [ -z "${CI-}" ]; then
+    waitjobs
+    nofixups
+    return 0
   fi
+
+  capcode waitjobs
   if [ "$code" != 0 ]; then
     notify "$code"
     return "$code"
   fi
-  if [ -z "${CI-}" ]; then
-    nofixups
+  capcode git_assert_clean
+  if [ "$code" != 0 ]; then
+    notify "$code"
+    return "$code"
   fi
   notify 0
   return 0
@@ -177,12 +182,18 @@ if [ "${LIB_GIT-}" ]; then
 fi
 LIB_GIT=1
 
-detect_git_base() {
+ensure_git_base() {
   if [ "${GIT_BASE+x}" = x ]; then
     return
   fi
 
   if [ -n "${CI_FORCE-}" ]; then
+    return
+  fi
+
+  if [ "$(git_commit_count)" -lt 2 ]; then
+    GIT_BASE=
+    export GIT_BASE
     return
   fi
 
@@ -199,12 +210,12 @@ detect_git_base() {
   GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
   export GIT_BASE
   if [ -n "$GIT_BASE" ]; then
-    echop lib/git.sh "GIT_BASE=$GIT_BASE"
+    echop "GIT_BASE=$GIT_BASE"
   fi
 }
 
 is_changed() {
-  detect_git_base
+  ensure_git_base
   if [ -z "${GIT_BASE-}" ]; then
     return
   fi
@@ -213,8 +224,8 @@ is_changed() {
     [ -n "$(git ls-files --other --exclude-standard -- "$@")" ]
 }
 
-detect_changed_files() {
-  detect_git_base
+ensure_changed_files() {
+  ensure_git_base
 
   if [ -n "${CHANGED_FILES-}" ]; then
     return
@@ -279,7 +290,7 @@ search_up() {(
 )}
 
 xargsd() {
-  detect_changed_files
+  ensure_changed_files
 
   pattern="$1"
   shift
@@ -288,12 +299,26 @@ xargsd() {
 }
 
 nofixups() {
-  detect_git_base
+  ensure_git_base
+  if [ "$(git_commit_count)" -eq 0 ]; then
+    return
+  fi
   commits="$(git log --grep='fixup!' --format=%h ${GIT_BASE:+"$GIT_BASE..HEAD"})"
   if [ -n "$commits" ]; then
     echo "$commits" | FGCOLOR=1 logpcat 'fixup detected'
     return 1
   fi
+}
+
+git_commit_count() {
+  git rev-list HEAD --count 2>/dev/null || echo "0"
+}
+
+configure_github_token() {
+  git config --global credential.helper store
+  cat > ~/.git-credentials <<EOF
+https://cyborg-ts:$GITHUB_TOKEN@github.com
+EOF
 }
 #!/bin/sh
 if [ "${LIB_JOB-}" ]; then
@@ -424,18 +449,28 @@ job_parseflags() {
     case "$FLAG" in
       h|help)
         cat <<EOF
-usage: $0 jobregex
+usage: $0 [-x] jobregex
+
+-x
+  Equivalent to DEBUG=1
 EOF
-        return 0
+        return 1
+        ;;
+      x)
+        flag_noarg && shift "$FLAGSHIFT"
+        set -x
         ;;
       *)
-        flag_errusage "unrecognized flag $RAWFLAG"
+        flag_errusage "unrecognized flag $FLAGRAW"
         ;;
     esac
   done
   shift "$FLAGSHIFT"
 
-  JOBFILTER=$*
+  if [ $# -gt 0 ]; then
+    JOBFILTER=$*
+    export JOBFILTER
+  fi
 }
 
 # See https://unix.stackexchange.com/questions/22044/correct-locking-in-shell-scripts
@@ -564,14 +599,12 @@ printfp() {(
   prefix="$1"
   shift
 
-  if [ -z "${FGCOLOR-}" ]; then
-    FGCOLOR="$(get_rand_color "$prefix")"
-  fi
+  _FGCOLOR=${FGCOLOR:-$(get_rand_color "$prefix")}
   should_color || true
   if [ $# -eq 0 ]; then
-    printf '%s' "$(COLOR=$__COLOR setaf "$FGCOLOR" "$prefix")"
+    printf '%s' "$(COLOR=$__COLOR setaf "$_FGCOLOR" "$prefix")"
   else
-    printf '%s: %s\n' "$(COLOR=$__COLOR setaf "$FGCOLOR" "$prefix")" "$(printf "$@")"
+    printf '%s: %s\n' "$(COLOR=$__COLOR setaf "$_FGCOLOR" "$prefix")" "$(printf "$@")"
   fi
 )}
 
@@ -756,43 +789,19 @@ fi
 LIB_MAKE=1
 
 _make() {
-  if [ "${CI:-}" ]; then
-    if ! is_changed .; then
-      return
-    fi
-    if [ "${GITHUB_TOKEN:-}" ]; then
-      git config --global credential.helper store
-      cat > ~/.git-credentials <<EOF
-https://cyborg-ts:$GITHUB_TOKEN@github.com
-EOF
-    fi
-    git submodule update --init --recursive
+  if [ "${CI:-}" ] && ! is_changed .; then
+    return
   fi
-  if [ -z "${MAKE_LOG:-}" ]; then
+  if [ -z "${CI_MAKE_ROOT-}" ]; then
     CI_MAKE_ROOT=1
-    export MAKE_LOG="./.make-log"
-    # set +e
-    # if [ -t 1 ]; then
-    #   # runtty is necessary to allow make to write its output unbuffered. Otherwise the
-    #   # output is printed in surges as the write buffer is exceeded rather than a continous
-    #   # stream. Remove the runtty prefix to experience the laggy behaviour without it.
-    #   runtty make -sj8 "$@" \
-    #     | tee /dev/stderr "$MAKE_LOG" \
-    #     | stripansi > "$MAKE_LOG.txt"
-    # else
-    #   make -sj8 "$@" \
-    #     | tee /dev/stderr "$MAKE_LOG" \
-    #     | stripansi > "$MAKE_LOG.txt"
-    # fi
   else
     CI_MAKE_ROOT=0
-    # set +e
-    # make -sj8 "$@"
   fi
 
-  detect_git_base
+  ensure_git_base
   capcode make -sj8 "$@"
-  if [ "${CI_MAKE_ROOT-}" = 0 ]; then
+  if [ "$code" != 0 ]; then
+    notify "$code"
     return "$code"
   fi
   ci_waitjobs
@@ -961,11 +970,14 @@ pick() {
   shift
 
   seed_file="$(mktemp)"
-  echo "$seed" >"$seed_file"
-  # We add 16 more bytes to the seed file for sufficient entropy. Otherwise both Cygwin's
+
+  # We add 32 more bytes to the seed file for sufficient entropy. Otherwise both Cygwin's
   # and MinGW's sort for example complains about the lack of entropy on stderr and writes
   # nothing to stdout. I'm sure there are more platforms that would too.
-  echo "================" >"$seed_file"
+  #
+  # We also limit to a max of 32 bytes as otherwise macOS's sort complains that the random
+  # seed is too large. Probably more platforms too.
+  ( echo "$seed" && echo "================================" ) | head -c64 >"$seed_file"
 
   while [ $# -gt 0 ]; do
     echo "$1"
@@ -980,30 +992,40 @@ if [ "${LIB_RELEASE-}" ]; then
 fi
 LIB_RELEASE=1
 
-goos() {
-  case $1 in
-    macos) echo darwin;;
-    *) echo $1;;
+ensure_goos() {
+  if [ -n "${GOOS-}" ]; then
+    return
+  fi
+  ensure_os
+  case "$OS" in
+    macos) export GOOS=darwin;;
+    *) export GOOS=$1;;
   esac
 }
 
-os() {
+ensure_os() {
+  if [ -n "${OS-}" ]; then
+    return
+  fi
   uname=$(uname)
   case $uname in
-    Linux) echo linux;;
-    Darwin) echo macos;;
-    FreeBSD) echo freebsd;;
-    CYGWIN_NT*|MINGW32_NT*) echo windows;;
-    *) echo "$uname";;
+    Linux) OS=linux;;
+    Darwin) OS=macos;;
+    FreeBSD) OS=freebsd;;
+    CYGWIN_NT*|MINGW32_NT*) OS=windows;;
+    *) OS=$uname;;
   esac
 }
 
-arch() {
+ensure_arch() {
+  if [ -n "${ARCH-}" ]; then
+    return
+  fi
   uname_m=$(uname -m)
   case $uname_m in
-    aarch64) echo arm64;;
-    x86_64) echo amd64;;
-    *) echo "$uname_m";;
+    aarch64) ARCH=arm64;;
+    x86_64) ARCH=amd64;;
+    *) ARCH=$uname_m;;
   esac
 }
 
@@ -1022,11 +1044,52 @@ manpath() {
 }
 
 is_writable_dir() {
-  # The path has to exist for -w to succeed.
-  sh_c "mkdir -p '$1' 2>/dev/null" || true
-  if [ ! -w "$1" ]; then
-    return 1
+  # If it can be created, we can use it.
+  sh_c "mkdir -p '$1' 2>/dev/null"
+}
+
+ensure_prefix() {
+  ensure_os
+  ensure_arch
+  if [ -z "${PREFIX-}" -a "$OS" = macos -a "$ARCH" = arm64 ]; then
+    # M1 Mac's do not allow modifications to /usr/local even with sudo.
+    PREFIX=$HOME/.local
   fi
+  PREFIX=${PREFIX:-/usr/local}
+
+  sh_c="sh_c"
+  # The reason for checking whether bin is writable is that on macOS you have /usr/local
+  # owned by root but you don't need root to write to its subdirectories which is all we
+  # need to do.
+  if ! is_writable_dir "$PREFIX/bin"; then
+    sh_c="sudo_sh_c"
+  fi
+}
+#!/bin/sh
+if [ "${LIB_TEMP-}" ]; then
+  return 0
+fi
+LIB_TEMP=1
+
+ensure_tmpdir() {
+  if [ -n "${TMPDIR-}" ]; then
+    return
+  fi
+
+  TMPDIR=$(mktemp -d)
+  trap "rm -r '$TMPDIR'" EXIT
+}
+
+mktempd() {
+  ensure_tmpdir
+  tmpd=$(mktemp -d "$@")
+  mv "$tmpd" "$TMPDIR/$(basename $tmpd)"
+}
+
+mktempf() {
+  ensure_tmpdir
+  tmpf=$(mktemp "$@")
+  mv "$tmpf" "$TMPDIR/$(basename $tmpf)"
 }
 #!/bin/sh
 if [ "${LIB_TEST-}" ]; then

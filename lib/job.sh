@@ -129,18 +129,28 @@ job_parseflags() {
     case "$FLAG" in
       h|help)
         cat <<EOF
-usage: $0 jobregex
+usage: $0 [-x] jobregex
+
+-x
+  Equivalent to DEBUG=1
 EOF
-        return 0
+        return 1
+        ;;
+      x)
+        flag_noarg && shift "$FLAGSHIFT"
+        set -x
         ;;
       *)
-        flag_errusage "unrecognized flag $RAWFLAG"
+        flag_errusage "unrecognized flag $FLAGRAW"
         ;;
     esac
   done
   shift "$FLAGSHIFT"
 
-  JOBFILTER=$*
+  if [ $# -gt 0 ]; then
+    JOBFILTER=$*
+    export JOBFILTER
+  fi
 }
 
 # See https://unix.stackexchange.com/questions/22044/correct-locking-in-shell-scripts
