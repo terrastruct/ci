@@ -8,7 +8,7 @@ LIB_RELEASE=1
 ensure_os() {
   if [ -n "${OS-}" ]; then
     # Windows defines OS=Windows_NT.
-    if [ "$OS" == Windows_NT ]; then
+    if [ "$OS" = Windows_NT ]; then
       OS=windows
     fi
     return
