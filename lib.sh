@@ -356,6 +356,19 @@ git_pure() {
   fi
   GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE gitc "$@"
 }
+
+gitsync() {(
+  REMOTE_HOST=$1
+  to=$2
+  localfiles="$(mktemp -d)/local_files"
+
+  sh_c ssh "$REMOTE_HOST" "'mkdir -p \"$to\"'"
+  sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git init'"
+  sh_c git push "$REMOTE_HOST:$to"
+  sh_c git ls-files --exclude-standard --cached --other > "$localfiles"
+  sh_c rsync --archive --human-readable --delete --delete-missing-args \
+    --files-from="$localfiles" ./ "$REMOTE_HOST:$to/"
+)}
 #!/bin/sh
 if [ "${LIB_JOB-}" ]; then
   return 0
@@ -733,7 +746,7 @@ sudo_sh_c() {
     sh_c "su root -c '$*'"
   else
     caterr <<EOF
-This script needs to run the following command as root:
+Unable to run the following command as root:
   $*
 Please install doas, sudo, or su.
 EOF
