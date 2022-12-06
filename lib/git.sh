@@ -15,12 +15,12 @@ ensure_git_base() {
     return
   fi
 
-  if git show --no-patch --format=%s%n%b | grep -qiF '\[ci-all\]'; then
+  if git show --no-patch --format=%s%n%b | grep -qF '\[ci-all\]'; then
     return
   fi
 
-  if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
-    git fetch --recurse-submodules=no --unshallow origin master
+  if [ -n "${CI-}" ]; then
+    git fetch --recurse-submodules=no --depth=200
   fi
 
   if [ "$(git_commit_count)" -lt 2 ]; then
