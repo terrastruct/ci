@@ -211,10 +211,7 @@ humanpath() {
 
 hide() {
   out="$(mktemp)"
-  set +e
-  "$@" >"$out" 2>&1
-  code="$?"
-  set -e
+  capcode "$@" >"$out" 2>&1
   if [ "$code" -eq 0 ]; then
     return
   fi
