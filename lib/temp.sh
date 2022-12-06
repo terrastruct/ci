@@ -11,7 +11,13 @@ ensure_tmpdir() {
 
   _TMPDIR=$(mktemp -d)
   export _TMPDIR
-  trap "rm -r '$_TMPDIR'" EXIT
+  trap temp_exittrap EXIT
+}
+
+temp_exittrap() {
+  if [ -n "${_TMPDIR-}" ]; then
+    rm -r "$_TMPDIR"
+  fi
 }
 
 temppath() {

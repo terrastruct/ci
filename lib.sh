@@ -238,7 +238,7 @@ ensure_changed_files() {
     return
   fi
 
-  CHANGED_FILES=$(mktemp -d)/changed-files
+  CHANGED_FILES=$(mktempd)/changed-files
   trap changed_files_exittrap EXIT
   git ls-files --other --exclude-standard > "$CHANGED_FILES"
   if [ -n "${GIT_BASE-}" ]; then
@@ -339,7 +339,7 @@ EOF
 
 git_pure() {
   if [ -z "${GIT_CONFIG_PURE-}" ]; then
-    GIT_CONFIG_PURE="$(mktemp -d)/gitconfig-pure"
+    GIT_CONFIG_PURE="$(mktempd)/gitconfig-pure"
     export GIT_CONFIG_PURE
   fi
 
@@ -360,7 +360,7 @@ git_pure() {
 gitsync() {(
   REMOTE_HOST=$1
   to=$2
-  localfiles="$(mktemp -d)/local_files"
+  localfiles="$(mktempd)/local_files"
 
   sh_c ssh "$REMOTE_HOST" "'mkdir -p \"$to\"'"
   sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git init'"
@@ -402,7 +402,7 @@ runjob() {(
 
   # We need to make sure we return with a non zero code if the command fails.
   # /bin/sh does not support -o pipefail unfortunately.
-  job_tmpdir="$(mktemp -d)"
+  job_tmpdir="$(mktempd)"
   stdout="$job_tmpdir/stdout"
   stderr="$job_tmpdir/stderr"
   mkfifo "$stdout"
@@ -421,13 +421,12 @@ runjob() {(
   ( eval "$*" >"$stdout" 2>"$stderr" )
 )}
 
-runjob_filter() {(
+runjob_filter() {
   if [ -z "${JOBFILTER-}" ]; then
     return 0
   fi
 
-  tmpdir="$(mktemp -d)"
-  trap 'rm -rf "$tmpdir"' EXIT
+  tmpdir="$(mktempd)"
   # For each slash separated element of $JOBNAME, $JOBFILTER must match at its
   # corresponding element. In order to facilitate this, we split $JOBFILTER on / and then
   # reconstruct the regex up to the point of each / and match it against $JOBNAME.
@@ -450,7 +449,7 @@ runjob_filter() {(
     fi
   done
   return 0
-)}
+}
 
 runjob_exittrap() {
   code="$?"
@@ -463,11 +462,11 @@ runjob_exittrap() {
   else
     echop "$jobname\$" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
   fi
-  rm -r "$job_tmpdir"
+  temp_exittrap
 }
 
 waitjobs() {
-  wait_tmpdir="$(mktemp -d)"
+  wait_tmpdir="$(mktempd)"
   jobs -l > "$wait_tmpdir/jobsl"
   trap waitjobs_sigtrap INT TERM
 
@@ -526,7 +525,7 @@ EOF
 # See https://unix.stackexchange.com/questions/22044/correct-locking-in-shell-scripts
 lockfile() {
   LOCKFILE=$1
-  LOCKFILE_PID=$(mktemp)
+  LOCKFILE_PID=$(mktempd)/pid
   echo "pid $$" > $LOCKFILE_PID
   if [ -n "${LOCKFILE_FORCE-}" ]; then
     unlockfile_ssh
@@ -538,7 +537,7 @@ lockfile() {
     rm "$LOCKFILE_PID"
     return 1
   fi
-  trap "rm $tmpfile $lockfile" EXIT
+  trap unlockfile EXIT
 }
 
 unlockfile() {
@@ -559,7 +558,7 @@ lockfile_ssh() {
     ssh "$LOCKHOST" rm "$LOCKFILE_PID"
     return 1
   fi
-  trap "unlockfile_ssh" EXIT
+  trap unlockfile_ssh EXIT
 }
 
 unlockfile_ssh() {
@@ -776,7 +775,7 @@ humanpath() {
 }
 
 hide() {
-  out="$(mktemp)"
+  out="$(mktempd)/hideout"
   capcode "$@" >"$out" 2>&1
   if [ "$code" -eq 0 ]; then
     return
@@ -795,7 +794,7 @@ echo_dur() {
 
 sponge() {
   dst="$1"
-  tmp="$(mktemp)"
+  tmp="$(mktempd)/sponge"
   cat > "$tmp"
   cat "$tmp" > "$dst"
 }
@@ -1021,7 +1020,7 @@ pick() {
   seed="$1"
   shift
 
-  seed_file="$(mktemp)"
+  seed_file="$(mktempd)/pickseed"
 
   # We add 32 more bytes to the seed file for sufficient entropy. Otherwise both Cygwin's
   # and MinGW's sort for example complains about the lack of entropy on stderr and writes
@@ -1144,24 +1143,36 @@ fi
 LIB_TEMP=1
 
 ensure_tmpdir() {
-  if [ -n "${TMPDIR-}" ]; then
+  if [ -n "${_TMPDIR-}" ]; then
     return
   fi
 
-  TMPDIR=$(mktemp -d)
-  trap "rm -r '$TMPDIR'" EXIT
+  _TMPDIR=$(mktemp -d)
+  export _TMPDIR
+  trap temp_exittrap EXIT
+}
+
+temp_exittrap() {
+  if [ -n "${_TMPDIR-}" ]; then
+    rm -r "$_TMPDIR"
+  fi
+}
+
+temppath() {
+  ensure_tmpdir
+  while true; do
+    temppath=$_TMPDIR/$(</dev/urandom head -c8 | base64)
+    if [ ! -e "$temppath" ]; then
+      echo "$temppath"
+      return
+    fi
+  done
 }
 
 mktempd() {
-  ensure_tmpdir
-  tmpd=$(mktemp -d "$@")
-  mv "$tmpd" "$TMPDIR/$(basename $tmpd)"
-}
-
-mktempf() {
-  ensure_tmpdir
-  tmpf=$(mktemp "$@")
-  mv "$tmpf" "$TMPDIR/$(basename $tmpf)"
+  tp=$(temppath)
+  mkdir -p "$tp"
+  echo "$tp"
 }
 #!/bin/sh
 if [ "${LIB_TEST-}" ]; then
@@ -1193,7 +1204,7 @@ assert_unset() {
 }
 
 testdiff_vars() {
-  tmpdir="$(mktemp -d)"
+  tmpdir="$(mktempd)/testdiff_vars"
   eval "_echo \"\$$1\"" > "$tmpdir/$1"
   eval "_echo \"\$$2\"" > "$tmpdir/$2"
   capcode testdiff "$tmpdir/$1" "$tmpdir/$2"

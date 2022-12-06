@@ -10,7 +10,7 @@ git() {
 }
 
 case1() {
-  tmpdir=$(mktemp -d)
+  tmpdir=$(mktempd)
   cd "$tmpdir"
   git init
   cat <<EOF >Makefile
@@ -35,7 +35,7 @@ EOF
 case2() {
   libd=$(cd "$(dirname "$0")" && pwd)
 
-  tmpdir=$(mktemp -d)
+  tmpdir=$(mktempd)
   cd "$tmpdir"
   git init
   cp "$libd/../LICENSE" .

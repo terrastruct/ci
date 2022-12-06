@@ -4,6 +4,7 @@ if [ "${LIB_GIT-}" ]; then
 fi
 LIB_GIT=1
 . ./log.sh
+. ./temp.sh
 
 ensure_git_base() {
   if [ "${GIT_BASE+x}" = x ]; then
@@ -61,7 +62,7 @@ ensure_changed_files() {
     return
   fi
 
-  CHANGED_FILES=$(mktemp -d)/changed-files
+  CHANGED_FILES=$(mktempd)/changed-files
   trap changed_files_exittrap EXIT
   git ls-files --other --exclude-standard > "$CHANGED_FILES"
   if [ -n "${GIT_BASE-}" ]; then
@@ -162,7 +163,7 @@ EOF
 
 git_pure() {
   if [ -z "${GIT_CONFIG_PURE-}" ]; then
-    GIT_CONFIG_PURE="$(mktemp -d)/gitconfig-pure"
+    GIT_CONFIG_PURE="$(mktempd)/gitconfig-pure"
     export GIT_CONFIG_PURE
   fi
 
@@ -183,7 +184,7 @@ git_pure() {
 gitsync() {(
   REMOTE_HOST=$1
   to=$2
-  localfiles="$(mktemp -d)/local_files"
+  localfiles="$(mktempd)/local_files"
 
   sh_c ssh "$REMOTE_HOST" "'mkdir -p \"$to\"'"
   sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git init'"

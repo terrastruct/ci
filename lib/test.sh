@@ -6,6 +6,7 @@ LIB_TEST=1
 . ./log.sh
 . ./job.sh
 . ./git.sh
+. ./temp.sh
 
 assert() {
   if [ $# -gt 2 ]; then
@@ -31,7 +32,7 @@ assert_unset() {
 }
 
 testdiff_vars() {
-  tmpdir="$(mktemp -d)"
+  tmpdir="$(mktempd)/testdiff_vars"
   eval "_echo \"\$$1\"" > "$tmpdir/$1"
   eval "_echo \"\$$2\"" > "$tmpdir/$2"
   capcode testdiff "$tmpdir/$1" "$tmpdir/$2"

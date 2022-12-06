@@ -9,7 +9,7 @@ pick() {
   seed="$1"
   shift
 
-  seed_file="$(mktemp)"
+  seed_file="$(mktempd)/pickseed"
 
   # We add 32 more bytes to the seed file for sufficient entropy. Otherwise both Cygwin's
   # and MinGW's sort for example complains about the lack of entropy on stderr and writes

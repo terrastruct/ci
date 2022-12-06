@@ -4,6 +4,7 @@ if [ "${LIB_LOG-}" ]; then
 fi
 LIB_LOG=1
 . ./rand.sh
+. ./temp.sh
 
 if [ -n "${DEBUG-}" ]; then
   set -x
@@ -210,7 +211,7 @@ humanpath() {
 }
 
 hide() {
-  out="$(mktemp)"
+  out="$(mktempd)/hideout"
   capcode "$@" >"$out" 2>&1
   if [ "$code" -eq 0 ]; then
     return
@@ -229,7 +230,7 @@ echo_dur() {
 
 sponge() {
   dst="$1"
-  tmp="$(mktemp)"
+  tmp="$(mktempd)/sponge"
   cat > "$tmp"
   cat "$tmp" > "$dst"
 }
