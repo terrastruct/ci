@@ -5,22 +5,28 @@ fi
 LIB_TEMP=1
 
 ensure_tmpdir() {
-  if [ -n "${TMPDIR-}" ]; then
+  if [ -n "${_TMPDIR-}" ]; then
     return
   fi
 
-  TMPDIR=$(mktemp -d)
-  trap "rm -r '$TMPDIR'" EXIT
+  _TMPDIR=$(mktemp -d)
+  export _TMPDIR
+  trap "rm -r '$_TMPDIR'" EXIT
+}
+
+temppath() {
+  ensure_tmpdir
+  while true; do
+    temppath=$_TMPDIR/$(</dev/urandom head -c8 | base64)
+    if [ ! -e "$temppath" ]; then
+      echo "$temppath"
+      return
+    fi
+  done
 }
 
 mktempd() {
-  ensure_tmpdir
-  tmpd=$(mktemp -d "$@")
-  mv "$tmpd" "$TMPDIR/$(basename $tmpd)"
-}
-
-mktempf() {
-  ensure_tmpdir
-  tmpf=$(mktemp "$@")
-  mv "$tmpf" "$TMPDIR/$(basename $tmpf)"
+  tp=$(temppath)
+  mkdir -p "$tp"
+  echo "$tp"
 }
