@@ -1068,7 +1068,7 @@ ensure_goarch() {
 }
 
 ensure_os() {
-  if [ -n "${OS-}" ]; then
+  if [ -n "${_OS-}" ]; then
     return
   fi
   uname=$(uname)
@@ -1076,9 +1076,11 @@ ensure_os() {
     Linux) OS=linux;;
     Darwin) OS=macos;;
     FreeBSD) OS=freebsd;;
-    CYGWIN_NT*|MINGW32_NT*) OS=windows;;
+    MINGW32_NT*) OS=windows;;
     *) OS=$uname;;
   esac
+  # We cannot use $OS to check as $OS is defined in MinGW terminals by default.
+  _OS=1
 }
 
 ensure_arch() {
