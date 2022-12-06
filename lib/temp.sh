@@ -23,7 +23,7 @@ temp_exittrap() {
 temppath() {
   ensure_tmpdir
   while true; do
-    temppath=$_TMPDIR/$(</dev/urandom head -c8 | base64 | tr / %)
+    temppath=$_TMPDIR/$(</dev/urandom od -N8 -tx -An -v | tr -d '[:space:]')
     if [ ! -e "$temppath" ]; then
       echo "$temppath"
       return
