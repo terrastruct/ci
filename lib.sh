@@ -366,7 +366,7 @@ gitsync() {(
 
   sh_c ssh "$REMOTE_HOST" "'mkdir -p \"$to\"'"
   sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git init'"
-  sh_c git push "$REMOTE_HOST:$to" HEAD:_gitsync
+  sh_c git push -f "$REMOTE_HOST:$to" HEAD:_gitsync
   sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git checkout -qf \"$(git rev-parse --short HEAD)\"'"
   sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git add --all'"
   sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git reset --hard HEAD'"
