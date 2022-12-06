@@ -1167,7 +1167,7 @@ temp_exittrap() {
 temppath() {
   ensure_tmpdir
   while true; do
-    temppath=$_TMPDIR/$(</dev/urandom head -c8 | base64)
+    temppath=$_TMPDIR/$(</dev/urandom head -c8 | base32)
     if [ ! -e "$temppath" ]; then
       echo "$temppath"
       return
