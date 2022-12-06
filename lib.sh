@@ -503,14 +503,14 @@ job_parseflags() {
 usage: $0 [-x] jobregex
 
 -x
-  Equivalent to DEBUG=1
+  Equivalent to TRACE=1
 EOF
         return 1
         ;;
       x)
         flag_noarg && shift "$FLAGSHIFT"
         set -x
-        export DEBUG=1
+        export TRACE=1
         ;;
       *)
         flag_errusage "unrecognized flag $FLAGRAW"
@@ -573,7 +573,7 @@ if [ "${LIB_LOG-}" ]; then
 fi
 LIB_LOG=1
 
-if [ -n "${DEBUG-}" ]; then
+if [ -n "${TRACE-}" ]; then
   set -x
 fi
 

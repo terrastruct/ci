@@ -6,7 +6,7 @@ LIB_LOG=1
 . ./rand.sh
 . ./temp.sh
 
-if [ -n "${DEBUG-}" ]; then
+if [ -n "${TRACE-}" ]; then
   set -x
 fi
 
