@@ -34,7 +34,7 @@ runjob() {(
 
   # We need to make sure we return with a non zero code if the command fails.
   # /bin/sh does not support -o pipefail unfortunately.
-  job_tmpdir="$(mktempd)"
+  job_tmpdir="$(TMPDIR= mktempd)"
   stdout="$job_tmpdir/stdout"
   stderr="$job_tmpdir/stderr"
   mkfifo "$stdout"
