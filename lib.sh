@@ -847,9 +847,9 @@ _make() {
     return
   fi
   if [ -z "${CI_MAKE_ROOT-}" ]; then
-    CI_MAKE_ROOT=1
+    export CI_MAKE_ROOT=1
   else
-    CI_MAKE_ROOT=0
+    export CI_MAKE_ROOT=0
   fi
 
   ensure_git_base
