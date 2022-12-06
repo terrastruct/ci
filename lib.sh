@@ -774,9 +774,9 @@ header() {
 
 bigheader() {
   set -- "$(echo "$*" | sed "s/^/ * /")"
-  FGCOLOR=${FGCOLOR:-5} logp "/**
+  FGCOLOR=${FGCOLOR:-3} logp "/****************************************************************
 $*
- **/"
+ ****************************************************************/"
 }
 
 # humanpath replaces all occurrences of " $HOME" with " ~"
