@@ -217,7 +217,7 @@ ensure_git_base() {
   fi
   export GIT_BASE
   if [ -n "$GIT_BASE" ]; then
-    echop "GIT_BASE=$GIT_BASE"
+    FGCOLOR=4 echop "GIT_BASE=$GIT_BASE"
   fi
 }
 
