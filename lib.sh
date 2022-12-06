@@ -196,11 +196,11 @@ ensure_git_base() {
   fi
 
   if [ -n "${CI-}" ]; then
-    git fetch --recurse-submodules=no --depth=200
+    git fetch --recurse-submodules=no --depth=200 origin HEAD
     while [ "$(git_commit_count)" -lt 2 -a "$(git rev-parse --is-shallow-repository)" = true ]; do
       echoerr "git fetch failed; retrying in 2s"
       sleep 2
-      git fetch --recurse-submodules=no --depth=200
+      git fetch --recurse-submodules=no --depth=200 origin HEAD
     done
   fi
 
