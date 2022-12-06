@@ -180,7 +180,7 @@ sudo_sh_c() {
     sh_c "su root -c '$*'"
   else
     caterr <<EOF
-This script needs to run the following command as root:
+Unable to run the following command as root:
   $*
 Please install doas, sudo, or su.
 EOF
