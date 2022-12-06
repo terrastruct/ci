@@ -207,7 +207,15 @@ ensure_git_base() {
 
   # Unfortunately --grep searches the whole commit message but we just want the header
   # searched. Should fix by using grep directly later.
-  GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
+  GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD | head -n1)"
+  if [ "$GIT_BASE" = "$(git rev-parse --short HEAD)" ]; then
+    # macOS sh is buggy and requires the subshell here.
+    if (git_assert_clean --quiet); then
+      GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
+    else
+      GIT_BASE=HEAD
+    fi
+  fi
   export GIT_BASE
   if [ -n "$GIT_BASE" ]; then
     echop "GIT_BASE=$GIT_BASE"
@@ -247,11 +255,19 @@ changed_files_exittrap() {
   rm -f "$CHANGED_FILES"
 }
 
+gitc() {
+  if should_color; then
+    command git -c color.diff=always "$@"
+  else
+    command git -c color.diff=never "$@"
+  fi
+}
+
 git_assert_clean() {
   if should_color; then
-    git -c color.diff=always diff --exit-code
+    gitc diff --exit-code "$@"
   else
-    git -c color.diff=never diff --exit-code
+    gitc diff --exit-code "$@"
   fi
 }
 
@@ -311,8 +327,8 @@ nofixups() {
 }
 
 git_commit_count() {
-  commit_count=$(git rev-list HEAD --count 2>/dev/null) || true
-  echo "${commit_count:-0}"
+  # macOS sh is buggy and requires the subshell here.
+  (git rev-list HEAD --count 2>/dev/null) || echo 0
 }
 
 configure_github_token() {
@@ -339,7 +355,7 @@ git_pure() {
     GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global user.email "info+cyborg@terrastruct.com"
     export _GIT_CONFIG_PURE=1
   fi
-  GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git "$@"
+  GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE gitc "$@"
 }
 #!/bin/sh
 if [ "${LIB_JOB-}" ]; then
@@ -1033,6 +1049,16 @@ ensure_goos() {
   esac
 }
 
+ensure_goarch() {
+  if [ -n "${GOARCH-}" ]; then
+    return
+  fi
+  ensure_arch
+  case "$ARCH" in
+    *) export GOARCH=$1;;
+  esac
+}
+
 ensure_os() {
   if [ -n "${OS-}" ]; then
     return
@@ -1177,7 +1203,7 @@ testdiff() {
     # 1. If _COLOR is set we want colors.
     # 2. Use the best diff algorithm.
     # 3. Highlight trailing whitespace.
-    git_pure ${_COLOR:+-c color.diff=always} diff \
+    git_pure diff \
       --diff-algorithm=histogram \
       --ws-error-highlight=all \
       --no-index "$@"

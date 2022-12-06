@@ -47,7 +47,7 @@ testdiff() {
     # 1. If _COLOR is set we want colors.
     # 2. Use the best diff algorithm.
     # 3. Highlight trailing whitespace.
-    git_pure ${_COLOR:+-c color.diff=always} diff \
+    git_pure diff \
       --diff-algorithm=histogram \
       --ws-error-highlight=all \
       --no-index "$@"

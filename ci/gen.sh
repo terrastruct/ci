@@ -2,14 +2,8 @@
 set -eu
 cd -- "$(dirname "$0")/.."
 cd ./lib
-. ./git.sh
+. ./log.sh
 cd - >/dev/null
-
-if [ -n "${CI-}" ]; then
-  if ! is_changed lib; then
-    return 0
-  fi
-fi
 
 sh_c chmod +w lib.sh
 sh_c \>lib.sh
@@ -20,7 +14,3 @@ find lib -name '*.sh' ! -name '*_test.sh' | sort | while read fname; do
   sh_c sed '"/^\. /d"' "$fname" \>\>lib.sh
 done
 sh_c chmod -w lib.sh
-
-if [ -n "${CI-}" ]; then
-  git_assert_clean
-fi

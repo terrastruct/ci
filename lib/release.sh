@@ -16,6 +16,16 @@ ensure_goos() {
   esac
 }
 
+ensure_goarch() {
+  if [ -n "${GOARCH-}" ]; then
+    return
+  fi
+  ensure_arch
+  case "$ARCH" in
+    *) export GOARCH=$1;;
+  esac
+}
+
 ensure_os() {
   if [ -n "${OS-}" ]; then
     return

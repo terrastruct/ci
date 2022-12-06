@@ -30,7 +30,15 @@ ensure_git_base() {
 
   # Unfortunately --grep searches the whole commit message but we just want the header
   # searched. Should fix by using grep directly later.
-  GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
+  GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD | head -n1)"
+  if [ "$GIT_BASE" = "$(git rev-parse --short HEAD)" ]; then
+    # macOS sh is buggy and requires the subshell here.
+    if (git_assert_clean --quiet); then
+      GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
+    else
+      GIT_BASE=HEAD
+    fi
+  fi
   export GIT_BASE
   if [ -n "$GIT_BASE" ]; then
     echop "GIT_BASE=$GIT_BASE"
@@ -70,11 +78,19 @@ changed_files_exittrap() {
   rm -f "$CHANGED_FILES"
 }
 
+gitc() {
+  if should_color; then
+    command git -c color.diff=always "$@"
+  else
+    command git -c color.diff=never "$@"
+  fi
+}
+
 git_assert_clean() {
   if should_color; then
-    git -c color.diff=always diff --exit-code
+    gitc diff --exit-code "$@"
   else
-    git -c color.diff=never diff --exit-code
+    gitc diff --exit-code "$@"
   fi
 }
 
@@ -134,8 +150,8 @@ nofixups() {
 }
 
 git_commit_count() {
-  commit_count=$(git rev-list HEAD --count 2>/dev/null) || true
-  echo "${commit_count:-0}"
+  # macOS sh is buggy and requires the subshell here.
+  (git rev-list HEAD --count 2>/dev/null) || echo 0
 }
 
 configure_github_token() {
@@ -162,5 +178,5 @@ git_pure() {
     GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git config --global user.email "info+cyborg@terrastruct.com"
     export _GIT_CONFIG_PURE=1
   fi
-  GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE command git "$@"
+  GIT_CONFIG_GLOBAL=$GIT_CONFIG_PURE gitc "$@"
 }
