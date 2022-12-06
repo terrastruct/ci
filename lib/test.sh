@@ -32,7 +32,8 @@ assert_unset() {
 }
 
 testdiff_vars() {
-  tmpdir="$(mktempd)/testdiff_vars"
+  tmpdir=$(mktempd)/testdiff_vars
+  mkdir -p "$tmpdir"
   eval "_echo \"\$$1\"" > "$tmpdir/$1"
   eval "_echo \"\$$2\"" > "$tmpdir/$2"
   capcode testdiff "$tmpdir/$1" "$tmpdir/$2"
