@@ -15,18 +15,18 @@ ensure_git_base() {
     return
   fi
 
-  if [ "$(git_commit_count)" -lt 2 ]; then
-    GIT_BASE=
-    export GIT_BASE
-    return
-  fi
-
   if git show --no-patch --format=%s%n%b | grep -qiF '\[ci-all\]'; then
     return
   fi
 
   if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
     git fetch --recurse-submodules=no --unshallow origin master
+  fi
+
+  if [ "$(git_commit_count)" -lt 2 ]; then
+    GIT_BASE=
+    export GIT_BASE
+    return
   fi
 
   # Unfortunately --grep searches the whole commit message but we just want the header

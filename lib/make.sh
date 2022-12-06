@@ -8,7 +8,7 @@ LIB_MAKE=1
 . ./ci.sh
 
 _make() {
-  if [ "${CI:-}" ] && ! is_changed .; then
+  if [ -n "${CI-}" ] && ! is_changed .; then
     return
   fi
   if [ -z "${CI_MAKE_ROOT-}" ]; then
