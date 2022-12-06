@@ -209,8 +209,7 @@ ensure_git_base() {
   # searched. Should fix by using grep directly later.
   GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD | head -n1)"
   if [ "$GIT_BASE" = "$(git rev-parse --short HEAD)" ]; then
-    # macOS sh is buggy and requires the subshell here.
-    if (git_assert_clean --quiet); then
+    if [ -z "$(git status -s)" ]; then
       GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
     else
       GIT_BASE=HEAD
@@ -1045,7 +1044,7 @@ ensure_goos() {
   ensure_os
   case "$OS" in
     macos) export GOOS=darwin;;
-    *) export GOOS=$1;;
+    *) export GOOS=$OS;;
   esac
 }
 
@@ -1055,7 +1054,7 @@ ensure_goarch() {
   fi
   ensure_arch
   case "$ARCH" in
-    *) export GOARCH=$1;;
+    *) export GOARCH=$ARCH;;
   esac
 }
 

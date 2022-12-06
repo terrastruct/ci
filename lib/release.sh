@@ -12,7 +12,7 @@ ensure_goos() {
   ensure_os
   case "$OS" in
     macos) export GOOS=darwin;;
-    *) export GOOS=$1;;
+    *) export GOOS=$OS;;
   esac
 }
 
@@ -22,7 +22,7 @@ ensure_goarch() {
   fi
   ensure_arch
   case "$ARCH" in
-    *) export GOARCH=$1;;
+    *) export GOARCH=$ARCH;;
   esac
 }
 
