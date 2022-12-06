@@ -196,13 +196,12 @@ ensure_git_base() {
   fi
 
   if [ -n "${CI-}" ]; then
-    # For some reason doing this twice makes it work...
     git fetch --recurse-submodules=no --depth=200
-    git fetch --recurse-submodules=no --depth=200
-    if [ "$(git_commit_count)" -lt 2 ]; then
-      echoerr "git fetch failed"
-      return 1
-    fi
+    while [ "$(git_commit_count)" -lt 2 -a "$(git rev-parse --is-shallow-repository)" = true ]; do
+      echoerr "git fetch failed; retrying in 2s"
+      sleep 2
+      git fetch --recurse-submodules=no --depth=200
+    done
   fi
 
   if [ "$(git_commit_count)" -lt 2 ]; then
@@ -1061,7 +1060,7 @@ LIB_RELEASE=1
 ensure_os() {
   if [ -n "${OS-}" ]; then
     # Windows defines OS=Windows_NT.
-    if [ "$OS" == Windows_NT ]; then
+    if [ "$OS" = Windows_NT ]; then
       OS=windows
     fi
     return
