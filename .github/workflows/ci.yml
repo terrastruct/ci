@@ -1,5 +1,5 @@
 name: ci
-on: [push]
+on: [push, pull_request]
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -10,3 +10,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: COLOR=1 ./ci/ci.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  nofixups:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: COLOR=1 ./bin/nofixups.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets._GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
