@@ -5,6 +5,7 @@ fi
 LIB_MISC=1
 . ./log.sh
 . ./flag.sh
+. ./release.sh
 
 aws() {
   # Without the redirection aws's cli will write directly to /dev/tty bypassing prefix.
