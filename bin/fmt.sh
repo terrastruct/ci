@@ -20,7 +20,13 @@ gomod() {
 gofmt() {
   sh_c hide xargsd "'\.go$'" gofmt -s -w
   if search_up go.mod >/dev/null; then
-    GOIMPORTS_LOCAL="${GOIMPORTS_LOCAL-}$(go list -m)"
+    modname=$(go list -m)
+    case $modname in
+      github.com/terrastruct/*|oss.terrastruct.com/*)
+        GOIMPORTS_LOCAL="${GOIMPORTS_LOCAL:+$GOIMPORTS_LOCAL,}oss.terrastruct.com,github.com/terrastruct";;
+      *)
+        GOIMPORTS_LOCAL="${GOIMPORTS_LOCAL:+$GOIMPORTS_LOCAL,}$modname";;
+    esac
   fi
   sh_c hide xargsd "'\.go$'" go run golang.org/x/tools/cmd/goimports@v0.4.0 -w -local="${GOIMPORTS_LOCAL-}"
 }
