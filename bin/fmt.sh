@@ -14,7 +14,7 @@ mdtoc() {
 }
 
 gomod() {
-  go mod tidy
+  sh_c go mod tidy
 }
 
 gofmt() {
