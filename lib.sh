@@ -895,13 +895,17 @@ pandoc_toc() {
   pandoc --wrap=none -s --toc --from gfm --to gfm | awk '/-/{f=1} {if (!NF) exit; print}'
 }
 
+mdtocsubst_help() {
+  cat <<EOF
+usage: mdtocsubst [--skip n] README.md ...
+EOF
+}
+
 mdtocsubst() {
   while flag_parse "$@"; do
     case "$FLAG" in
       h|help)
-        cat <<EOF
-usage: mdtocsubst [--skip n] README.md
-EOF
+        mdtocsubst_help
         return 0
         ;;
       skip)
@@ -915,24 +919,32 @@ EOF
   done
   shift "$FLAGSHIFT"
 
-  SKIP=${SKIP:-0}
+  SKIP=${SKIP:-1}
 
-  TOC=$(<"$1" pandoc_toc)
-  if [ "$SKIP" -gt 0 ]; then
-    TOC=$(echo "$TOC" | sed -E -e "/^ {0,$(((SKIP-1)*2))}-/d" -e "s/^ {0,$((SKIP*2))}//")
+  if [ $# -eq 0 ]; then
+    flag_errusage "At least one input file is required."
+    return 1
   fi
-  TOC_START=$(<"$1" grep -Fn '<!-- toc -->' | cut -d: -f1 | head -n1)
-  if [ -z "$TOC_START" ]; then
-    return 0
-  fi
-  BEFORE_TOC=$(<"$1" head -n"$((TOC_START))")
-  AFTER_TOC=$(<"$1" tail +"$((TOC_START+1))")
-  TOC_END=$(echo "$AFTER_TOC" | grep -nm 1 '^$' | cut -d: -f1 | head -n1)
-  TOC_END=$((TOC_START+TOC_END))
-  AFTER_TOC=$(<"$1" tail +"$TOC_END")
-  echo "$BEFORE_TOC" >"$1"
-  echo "$TOC" >>"$1"
-  echo "$AFTER_TOC" >>"$1"
+
+  while [ $# -gt 0 ]; do
+    TOC=$(<"$1" pandoc_toc)
+    if [ "$SKIP" -gt 0 ]; then
+      TOC=$(echo "$TOC" | sed -E -e "/^ {0,$(((SKIP-1)*2))}-/d" -e "s/^ {0,$((SKIP*2))}//")
+    fi
+    TOC_START=$(<"$1" grep -Fn '<!-- toc -->' | cut -d: -f1 | head -n1)
+    if [ -z "$TOC_START" ]; then
+      return 0
+    fi
+    BEFORE_TOC=$(<"$1" head -n"$((TOC_START))")
+    AFTER_TOC=$(<"$1" tail +"$((TOC_START+1))")
+    TOC_END=$(echo "$AFTER_TOC" | grep -nm 1 '^$' | cut -d: -f1 | head -n1)
+    TOC_END=$((TOC_START+TOC_END))
+    AFTER_TOC=$(<"$1" tail +"$TOC_END")
+    echo "$BEFORE_TOC" >"$1"
+    echo "$TOC" >>"$1"
+    echo "$AFTER_TOC" >>"$1"
+    shift
+  done
 }
 #!/bin/sh
 if [ "${LIB_NOTIFY-}" ]; then

@@ -10,7 +10,7 @@ cd - >/dev/null
 PATH="$(cd -- "$(dirname "$0")" && pwd)/../bin:$PATH"
 
 mdtoc() {
-  sh_c XARGS_N=1 xargsd "'\\.md$'" mdtocsubst --skip 1
+  sh_c xargsd "'\\.md$'" mdtocsubst
 }
 
 gomod() {
