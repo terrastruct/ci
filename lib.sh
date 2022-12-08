@@ -173,7 +173,7 @@ ensure_git_base() {
     return
   fi
 
-  if git show --no-patch --format=%s%n%b | grep -qF '\[ci-all\]'; then
+  if git show --no-patch --format=%s%n%b | grep -qF '\[ci-force\]'; then
     return
   fi
 
