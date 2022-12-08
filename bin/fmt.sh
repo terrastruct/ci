@@ -22,7 +22,7 @@ gofmt() {
   if search_up go.mod >/dev/null; then
     GOIMPORTS_LOCAL="${GOIMPORTS_LOCAL-}$(go list -m)"
   fi
-  sh_c xargsd "'\.go$'" goimports -w -local="${GOIMPORTS_LOCAL-}"
+  sh_c xargsd "'\.go$'" go run golang.org/x/tools/cmd/goimports@v0.4.0 -w -local="${GOIMPORTS_LOCAL-}"
 }
 
 pkgjson() {
@@ -30,7 +30,7 @@ pkgjson() {
 }
 
 prettier() {
-  sh_c xargsd "'\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'" prettier --print-width=90 --write
+  sh_c xargsd "'\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'" npx prettier@2.8.1 --print-width=90 --write
 }
 
 main() {
