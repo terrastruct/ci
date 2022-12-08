@@ -4,6 +4,7 @@ if [ "${LIB_NOTIFY-}" ]; then
 fi
 LIB_NOTIFY=1
 . ./log.sh
+. ./git.sh
 
 notify() {
   if [ "${CI_MAKE_ROOT-}" = 0 -o -z "${CI-}" ]; then
@@ -26,7 +27,9 @@ notify() {
     return
   fi
 
-  code="$1"
+  if [ "$code" -eq 0 ]; then
+    capcode nofixups
+  fi
   if [ "$code" -eq 0 ]; then
     status=success
     emoji=🟢

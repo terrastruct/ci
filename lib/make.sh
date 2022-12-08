@@ -20,7 +20,7 @@ _make() {
   ensure_git_base
   capcode make -sj8 "$@"
   if [ "$code" != 0 ]; then
-    notify "$code"
+    notify
     return "$code"
   fi
   ci_waitjobs

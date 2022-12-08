@@ -20,14 +20,15 @@ ci_waitjobs() {
 
   capcode waitjobs
   if [ "$code" -ne 0 ]; then
-    notify "$code"
+    notify
     return "$code"
   fi
   capcode git_assert_clean
   if [ "$code" -ne 0 ]; then
-    notify "$code"
+    notify
     return "$code"
   fi
-  notify 0
+  capcode nofixups
+  notify
   return 0
 }

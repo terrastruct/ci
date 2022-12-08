@@ -16,15 +16,16 @@ ci_waitjobs() {
 
   capcode waitjobs
   if [ "$code" -ne 0 ]; then
-    notify "$code"
+    notify
     return "$code"
   fi
   capcode git_assert_clean
   if [ "$code" -ne 0 ]; then
-    notify "$code"
+    notify
     return "$code"
   fi
-  notify 0
+  capcode nofixups
+  notify
   return 0
 }
 #!/bin/sh
@@ -876,7 +877,7 @@ _make() {
   ensure_git_base
   capcode make -sj8 "$@"
   if [ "$code" != 0 ]; then
-    notify "$code"
+    notify
     return "$code"
   fi
   ci_waitjobs
@@ -994,7 +995,9 @@ notify() {
     return
   fi
 
-  code="$1"
+  if [ "$code" -eq 0 ]; then
+    capcode nofixups
+  fi
   if [ "$code" -eq 0 ]; then
     status=success
     emoji=🟢
