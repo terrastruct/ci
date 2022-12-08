@@ -170,11 +170,15 @@ ensure_git_base() {
   fi
 
   if [ -n "${CI_FORCE-}" ]; then
+    export GIT_BASE=
+    FGCOLOR=4 echop "GIT_BASE="
     return
   fi
 
   if git show --no-patch --format=%s%n%b | grep -qF '[ci-force]'; then
     export CI_FORCE=1
+    export GIT_BASE=
+    FGCOLOR=4 echop "GIT_BASE="
     return
   fi
 
@@ -184,6 +188,7 @@ ensure_git_base() {
 
   if [ "$(git_commit_count)" -lt 2 ]; then
     export GIT_BASE=
+    FGCOLOR=4 echop "GIT_BASE="
     return
   fi
 
