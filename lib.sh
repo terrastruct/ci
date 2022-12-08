@@ -15,12 +15,12 @@ ci_waitjobs() {
   fi
 
   capcode waitjobs
-  if [ "$code" != 0 ]; then
+  if [ "$code" -ne 0 ]; then
     notify "$code"
     return "$code"
   fi
   capcode git_assert_clean
-  if [ "$code" != 0 ]; then
+  if [ "$code" -ne 0 ]; then
     notify "$code"
     return "$code"
   fi
@@ -250,10 +250,15 @@ gitc() {
 }
 
 git_assert_clean() {
+  diff=$(mktempd)/diff
   if should_color; then
-    gitc diff --exit-code "$@"
+    capcode git -c color.diff=always diff --exit-code "$@" >"$diff"
   else
-    gitc diff --exit-code "$@"
+    capcode git -c color.diff=never diff --exit-code "$@" >"$diff"
+  fi
+  if [ "$code" -ne 0 ]; then
+    echoerr "some files need to be formatted or regenerated"
+    cat "$diff" >&2
   fi
 }
 
