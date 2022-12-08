@@ -300,13 +300,13 @@ _7_ensure_pr() {
   # We do not use gh pr view as that includes closed PRs.
   pr_url="$(gh pr list --state open --head "$SRC_PREFIX$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
   if [ -n "$pr_url" ]; then
-    pr_url=$(sh_c gh pr edit --body "'$body'" "$SRC_PREFIX$VERSION" | tee /dev/stderr)
+    pr_url=$(sh_c gh pr edit --body "'$body'" "$pr_url" | tee /dev/stderr)
     _7_ensure_pr_repodir
     return 0
   fi
   pr_url="$(gh pr list --state merged --head "$SRC_PREFIX$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
   if [ -n "$pr_url" ]; then
-    pr_url=$(sh_c gh pr edit --body "'$body'" "$SRC_PREFIX$VERSION" | tee /dev/stderr)
+    pr_url=$(sh_c gh pr edit --body "'$body'" "$pr_url" | tee /dev/stderr)
     _7_ensure_pr_repodir
     return 0
   fi
@@ -326,12 +326,12 @@ _7_ensure_pr_repodir() {
   # We do not use gh pr view as that includes closed PRs.
   pr_url_repo="$(gh pr list --repo "$REPO" --state open --head "$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
   if [ -n "$pr_url_repo" ]; then
-    pr_url_repo=$(sh_c gh pr edit --repo "$REPO" --body "'$body'" "$VERSION" | tee /dev/stderr)
+    pr_url_repo=$(sh_c gh pr edit --repo "$REPO" --body "'$body'" "$pr_url_repo" | tee /dev/stderr)
     return 0
   fi
   pr_url_repo="$(gh pr list --repo "$REPO" --state merged --head "$VERSION" --json=url '--template={{ range . }}{{ .url }}{{end}}')"
   if [ -n "$pr_url_repo" ]; then
-    pr_url_repo=$(sh_c gh pr edit --repo "$REPO" --body "'$body'" "$VERSION" | tee /dev/stderr)
+    pr_url_repo=$(sh_c gh pr edit --repo "$REPO" --body "'$body'" "$pr_url_repo" | tee /dev/stderr)
     return 0
   fi
 
