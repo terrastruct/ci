@@ -28,7 +28,6 @@ ci_go_test() {
 ci_waitjobs() {
   if [ -z "${CI-}" ]; then
     waitjobs
-    nofixups
     return 0
   fi
 
@@ -242,7 +241,6 @@ ensure_changed_files() {
   fi
 
   CHANGED_FILES=$(mktempd)/changed-files
-  trap changed_files_exittrap EXIT
   git ls-files --other --exclude-standard > "$CHANGED_FILES"
   if [ -n "${GIT_BASE-}" ]; then
     git diff --relative --name-only "$GIT_BASE" | filter_exists >> "$CHANGED_FILES"
@@ -250,11 +248,9 @@ ensure_changed_files() {
     git ls-files >> "$CHANGED_FILES"
   fi
   export CHANGED_FILES
-  logpcat changed <"$CHANGED_FILES"
-}
-
-changed_files_exittrap() {
-  rm -f "$CHANGED_FILES"
+  if [ -z "${CI_FORCE-}" ]; then
+    logpcat changed <"$CHANGED_FILES"
+  fi
 }
 
 gitc() {

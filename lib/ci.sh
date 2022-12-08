@@ -32,7 +32,6 @@ ci_go_test() {
 ci_waitjobs() {
   if [ -z "${CI-}" ]; then
     waitjobs
-    nofixups
     return 0
   fi
 

@@ -50,7 +50,7 @@ runjob() {(
   trap runjob_exittrap EXIT
   # For some reason without wrapping this in a subshell, the waitjobs in subjob
   # case_notequal_sign of ./lib/flags_test.sh freezes.
-  ( "$@" >"$stdout" 2>"$stderr" )
+  ( eval "$*" >"$stdout" 2>"$stderr" )
 )}
 
 runjob_filter() {
