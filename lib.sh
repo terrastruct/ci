@@ -964,15 +964,15 @@ fi
 LIB_NOTIFY=1
 
 notify() {
-  if [ "${CI_MAKE_ROOT-}" = 0 -o -z "${CI:-}" ]; then
+  if [ "${CI_MAKE_ROOT-}" = 0 -o -z "${CI-}" ]; then
     return
   fi
-  if [ -z "${SLACK_WEBHOOK_URL:-}" -a -z "${DISCORD_WEBHOOK_URL:-}" ]; then
+  if [ -z "${SLACK_WEBHOOK_URL-}" -a -z "${DISCORD_WEBHOOK_URL-}" ]; then
     # Not all repos need CI failure notifications.
     return
   fi
 
-  if [ -z "${GITHUB_RUN_ID:-}" ]; then
+  if [ -z "${GITHUB_RUN_ID-}" ]; then
     # For testing.
     GITHUB_WORKFLOW=ci
     GITHUB_JOB=fmt
@@ -991,27 +991,29 @@ notify() {
   else
     status='failure'
     emoji=🛑
-    if [ "${SLACK_WEBHOOK_URL:-}" ]; then
+    if [ "${SLACK_WEBHOOK_URL-}" ]; then
       status="$status <!here>"
     fi
   fi
 
-  GITHUB_JOB_URL="$(curl -fsSL -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?per_page=100" | \
-    jq -r ".jobs[] | select( .name == \"$GITHUB_JOB\") | .html_url")"
+  GITHUB_JOB_URL=$(curl -fsSL -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?per_page=100" | \
+    jq -r ".jobs[] | select( .name == \"$GITHUB_JOB\") | .html_url")
   if [ -z "$GITHUB_JOB_URL" ]; then
     status="failed to query github job URL <!here>"
     emoji=🛑
     GITHUB_JOB_URL="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
   fi
 
-  commit_sha="$(git rev-parse --short HEAD)"
-  commit_title="$(git show --no-patch '--format=%s')"
+  repo=$(basename "$(git remote get-url origin)")
+  repo=${repo%.git}
+  commit_sha=$(git rev-parse --short HEAD)
+  commit_title=$(git show --no-patch '--format=%s')
 
   # We need to escape any & < > in $commit_title.
   # See https://api.slack.com/reference/surfaces/formatting#escaping
-  commit_title="$(_echo "$commit_title" | sed -e 's/&/\&amp;/g' )"
-  commit_title="$(_echo "$commit_title" | sed -e 's/</\&lt;/g' )"
-  commit_title="$(_echo "$commit_title" | sed -e 's/>/\&gt;/g' )"
+  commit_title=$(_echo "$commit_title" | sed -e 's/&/\&amp;/g' )
+  commit_title=$(_echo "$commit_title" | sed -e 's/</\&lt;/g' )
+  commit_title=$(_echo "$commit_title" | sed -e 's/>/\&gt;/g' )
 
   # Three differences.
   # 1. @here doesn't work in discord code blocks but do in slack.
@@ -1026,13 +1028,13 @@ notify() {
       msg="$msg @here"
     fi
     msg="$msg\`\`\`
-$emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
+$emoji $repo $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
 \`\`\`<$GITHUB_JOB_URL>"
     json="{\"content\":$(printf %s "$msg" | jq -sR .)}"
     url="$DISCORD_WEBHOOK_URL"
   elif [ -n "${SLACK_WEBHOOK_URL-}" ]; then
     msg="\`\`\`
-$emoji $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
+$emoji $repo - $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
    $GITHUB_JOB_URL
 \`\`\`"
     json="{\"text\":$(printf %s "$msg" | jq -sR .)}"
