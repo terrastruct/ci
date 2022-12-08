@@ -174,6 +174,7 @@ ensure_git_base() {
   fi
 
   if git show --no-patch --format=%s%n%b | grep -qF '[ci-force]'; then
+    export CI_FORCE=1
     return
   fi
 
@@ -182,8 +183,7 @@ ensure_git_base() {
   fi
 
   if [ "$(git_commit_count)" -lt 2 ]; then
-    GIT_BASE=
-    export GIT_BASE
+    export GIT_BASE=
     return
   fi
 
