@@ -978,10 +978,6 @@ notify() {
   if [ "${CI_MAKE_ROOT-}" = 0 -o -z "${CI-}" ]; then
     return
   fi
-  if [ -z "${SLACK_WEBHOOK_URL-}" -a -z "${DISCORD_WEBHOOK_URL-}" ]; then
-    # Not all repos need CI failure notifications.
-    return
-  fi
 
   if [ -z "${GITHUB_RUN_ID-}" ]; then
     # For testing.
@@ -993,6 +989,14 @@ notify() {
   elif [ "$GITHUB_REF_PROTECTED" != true ]; then
     # We only want to notify on protected branch failures.
     return
+  fi
+
+  if [ -z "${SLACK_WEBHOOK_URL-}" -a -z "${DISCORD_WEBHOOK_URL-}" ]; then
+    caterr <<EOF
+\$SLACK_WEBHOOK_URL or \$DISCORD_WEBHOOK_URL must be set to enable notifications
+on protected branches
+EOF
+    return 1
   fi
 
   if [ "$code" -eq 0 ]; then
