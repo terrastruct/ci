@@ -9,11 +9,11 @@ cd - >/dev/null
 
 PATH="$(cd -- "$(dirname "$0")" && pwd)/../bin:$PATH"
 
-mdtoc() {
+mdtocsubst_xargsd() {
   sh_c hide xargsd "'\\.md$'" mdtocsubst
 }
 
-gomod() {
+gomodtidy() {
   sh_c go mod tidy
 }
 
@@ -43,19 +43,19 @@ main() {
   job_parseflags "$@"
   ensure_changed_files
   if <"$CHANGED_FILES" grep -qm1 '\.\(md\)$'; then
-    runjob mdtoc &
+    runjob mdtocsubst mdtocsubst_xargsd &
   fi
   if search_up go.mod >/dev/null; then
-    runjob go.mod gomod &
+    runjob go.mod gomodtidy &
   fi
   if <"$CHANGED_FILES" grep -qm1 '\.\(go\)$'; then
-    runjob gofmt gofmt &
+    runjob gofmt &
   fi
   if search_up package.json > /dev/null; then
     runjob package.json pkgjson &
   fi
   if <"$CHANGED_FILES" grep -qm1 '\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'; then
-    runjob prettier prettier &
+    runjob prettier &
   fi
   waitjobs
 }
