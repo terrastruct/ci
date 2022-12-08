@@ -4,6 +4,7 @@ if [ "${LIB_MISC-}" ]; then
 fi
 LIB_MISC=1
 . ./log.sh
+. ./flag.sh
 
 aws() {
   # Without the redirection aws's cli will write directly to /dev/tty bypassing prefix.
@@ -33,12 +34,12 @@ pandoc_toc() {
   pandoc --wrap=none -s --toc --from gfm --to gfm | awk '/-/{f=1} {if (!NF) exit; print}'
 }
 
-tocsubst() {
+mdtocsubst() {
   while flag_parse "$@"; do
     case "$FLAG" in
       h|help)
         cat <<EOF
-usage: tocsubst [--skip n] README.md
+usage: mdtocsubst [--skip n] README.md
 EOF
         return 0
         ;;
@@ -60,6 +61,9 @@ EOF
     TOC=$(echo "$TOC" | sed -E -e "/^ {0,$(((SKIP-1)*2))}-/d" -e "s/^ {0,$((SKIP*2))}//")
   fi
   TOC_START=$(<"$1" grep -Fn '<!-- toc -->' | cut -d: -f1 | head -n1)
+  if [ -z "$TOC_START" ]; then
+    return 0
+  fi
   BEFORE_TOC=$(<"$1" head -n"$((TOC_START))")
   AFTER_TOC=$(<"$1" tail +"$((TOC_START+1))")
   TOC_END=$(echo "$AFTER_TOC" | grep -nm 1 '^$' | cut -d: -f1 | head -n1)

@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+cd -- "$(dirname "$0")/../lib"
+. ./misc.sh
+cd - >/dev/null
+
+mdtocsubst "$@"

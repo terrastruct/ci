@@ -4,6 +4,7 @@ if [ "${LIB_GIT-}" ]; then
 fi
 LIB_GIT=1
 . ./log.sh
+. ./release.sh
 . ./temp.sh
 
 ensure_git_base() {
@@ -134,7 +135,11 @@ xargsd() {
   pattern="$1"
   shift
 
-  < "$CHANGED_FILES" grep "$pattern" | hide xargs ${CI:+-r} -t -P16 "-n${XARGS_N:-256}" -- "$@"
+  ensure_os
+  if [ "$OS" = linux ]; then
+    r_flag=1
+  fi
+  <"$CHANGED_FILES" grep "$pattern" | xargs ${r_flag:+-r} -t -n"${XARGS_N:-256}" -- "$@"
 }
 
 nofixups() {

@@ -18,7 +18,7 @@ fi
 if is_changed \
   ./lib/test.sh ./lib/rand.sh ./lib/log.sh ./lib/git.sh \
   ./lib/flag.sh ./lib/ci.sh ./lib/job.sh ./lib/notify.sh \
-  ./lib/temp.sh ; then
+  ./lib/temp.sh ./lib/release.sh; then
   runjob make ./lib/make_test.sh &
 fi
 waitjobs

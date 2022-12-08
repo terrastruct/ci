@@ -4,25 +4,8 @@ if [ "${LIB_CI-}" ]; then
 fi
 LIB_CI=1
 
-ci_go_fmt() {
-	sh_c xargsd '\.go$' gofmt -s -w
-	sh_c xargsd '\.go$' go run golang.org/x/tools/cmd/goimports@v0.3.0 \
-		-w -local="$(go list -m)"
-  if search_up go.mod; then
-    sh_c go mod tidy
-  fi
-}
-
 ci_go_lint() {
   go vet --composites=false ./...
-}
-
-ci_go_build() {
-  go build ./...
-}
-
-ci_go_test() {
-  go test "${@:-./...}"
 }
 
 ci_waitjobs() {
@@ -309,7 +292,11 @@ xargsd() {
   pattern="$1"
   shift
 
-  < "$CHANGED_FILES" grep "$pattern" | hide xargs ${CI:+-r} -t -P16 "-n${XARGS_N:-256}" -- "$@"
+  ensure_os
+  if [ "$OS" = linux ]; then
+    r_flag=1
+  fi
+  <"$CHANGED_FILES" grep "$pattern" | xargs ${r_flag:+-r} -t -n"${XARGS_N:-256}" -- "$@"
 }
 
 nofixups() {
@@ -908,12 +895,12 @@ pandoc_toc() {
   pandoc --wrap=none -s --toc --from gfm --to gfm | awk '/-/{f=1} {if (!NF) exit; print}'
 }
 
-tocsubst() {
+mdtocsubst() {
   while flag_parse "$@"; do
     case "$FLAG" in
       h|help)
         cat <<EOF
-usage: tocsubst [--skip n] README.md
+usage: mdtocsubst [--skip n] README.md
 EOF
         return 0
         ;;
@@ -935,6 +922,9 @@ EOF
     TOC=$(echo "$TOC" | sed -E -e "/^ {0,$(((SKIP-1)*2))}-/d" -e "s/^ {0,$((SKIP*2))}//")
   fi
   TOC_START=$(<"$1" grep -Fn '<!-- toc -->' | cut -d: -f1 | head -n1)
+  if [ -z "$TOC_START" ]; then
+    return 0
+  fi
   BEFORE_TOC=$(<"$1" head -n"$((TOC_START))")
   AFTER_TOC=$(<"$1" tail +"$((TOC_START+1))")
   TOC_END=$(echo "$AFTER_TOC" | grep -nm 1 '^$' | cut -d: -f1 | head -n1)
