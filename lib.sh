@@ -218,7 +218,7 @@ is_changed() {
   if [ "$(git_commit_count)" -lt 2 ]; then
     return
   fi
-  ! git diff --quiet "$GIT_BASE~1" -- "$@" ||
+  ! git diff --quiet "$GIT_BASE" -- "$@" ||
     [ -n "$(git ls-files --other --exclude-standard -- "$@")" ]
 }
 
