@@ -30,7 +30,7 @@ pkgjson() {
 }
 
 prettier() {
-  sh_c xargsd "'\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'" npx prettier@2.8.1 --print-width=90 --write
+  sh_c xargsd "'\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'" npx prettier@2.8.1 --loglevel=warn --print-width=90 --write
 }
 
 main() {
