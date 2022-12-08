@@ -1017,8 +1017,6 @@ notify() {
     GITHUB_JOB_URL="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
   fi
 
-  repo_name=$(basename "$(git remote get-url origin)")
-  repo_name=${repo_name%.git}
   commit_sha=$(git rev-parse --short HEAD)
   commit_title=$(git show --no-patch '--format=%s')
 
@@ -1041,13 +1039,13 @@ notify() {
       msg="$msg @here"
     fi
     msg="$msg\`\`\`
-$emoji $repo_name $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
+$emoji $GITHUB_REPOSITORY $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
 \`\`\`<$GITHUB_JOB_URL>"
     json="{\"content\":$(printf %s "$msg" | jq -sR .)}"
     url="$DISCORD_WEBHOOK_URL"
   elif [ -n "${SLACK_WEBHOOK_URL-}" ]; then
     msg="\`\`\`
-$emoji $repo_name - $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
+$emoji $GITHUB_REPOSITORY - $commit_sha - $commit_title | $GITHUB_WORKFLOW/$GITHUB_JOB: $status
    $GITHUB_JOB_URL
 \`\`\`"
     json="{\"text\":$(printf %s "$msg" | jq -sR .)}"
