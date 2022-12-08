@@ -10,7 +10,7 @@ cd - >/dev/null
 PATH="$(cd -- "$(dirname "$0")" && pwd)/../bin:$PATH"
 
 mdtoc() {
-  sh_c xargsd "'\\.md$'" mdtocsubst
+  sh_c hide xargsd "'\\.md$'" mdtocsubst
 }
 
 gomod() {
@@ -18,11 +18,11 @@ gomod() {
 }
 
 gofmt() {
-  sh_c xargsd "'\.go$'" gofmt -s -w
+  sh_c hide xargsd "'\.go$'" gofmt -s -w
   if search_up go.mod >/dev/null; then
     GOIMPORTS_LOCAL="${GOIMPORTS_LOCAL-}$(go list -m)"
   fi
-  sh_c xargsd "'\.go$'" go run golang.org/x/tools/cmd/goimports@v0.4.0 -w -local="${GOIMPORTS_LOCAL-}"
+  sh_c hide xargsd "'\.go$'" go run golang.org/x/tools/cmd/goimports@v0.4.0 -w -local="${GOIMPORTS_LOCAL-}"
 }
 
 pkgjson() {
@@ -30,7 +30,7 @@ pkgjson() {
 }
 
 prettier() {
-  sh_c xargsd "'\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'" npx prettier@2.8.1 --loglevel=warn --print-width=90 --write
+  sh_c hide xargsd "'\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'" npx prettier@2.8.1 --loglevel=warn --print-width=90 --write
 }
 
 main() {
