@@ -1,6 +1,8 @@
 # ci
 
 [![ci](https://github.com/terrastruct/ci/actions/workflows/ci.yml/badge.svg)](https://github.com/terrastruct/ci/actions/workflows/ci.yml)
+[![daily](https://github.com/terrastruct/ci/actions/workflows/daily.yml/badge.svg)](https://github.com/terrastruct/ci/actions/workflows/daily.yml)
+[![license](https://img.shields.io/github/license/terrastruct/ci?color=9cf)](./LICENSE)
 
 Terrastruct's CI scripts.
 

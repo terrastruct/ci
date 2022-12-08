@@ -66,6 +66,7 @@ is_changed() {
 
 ensure_changed_files() {
   ensure_git_base
+  cd "$(git rev-parse --show-toplevel)"
 
   if [ -n "${CHANGED_FILES-}" ]; then
     return
@@ -139,17 +140,20 @@ search_up() {(
   return 1
 )}
 
-xargsd() {
-  ensure_changed_files
-
-  pattern="$1"
-  shift
-
+xargs() {
   ensure_os
   if [ "$OS" = linux ]; then
     r_flag=1
   fi
-  <"$CHANGED_FILES" grep "$pattern" | xargs ${r_flag:+-r} -t -n"${XARGS_N:-256}" -- "$@"
+  command xargs ${r_flag:+-r} -t -n"${XARGS_N:-256}" -- "$@"
+}
+
+xargsd() {
+  ensure_changed_files
+  pattern="$1"
+  shift
+
+  <"$CHANGED_FILES" grep "$pattern" | xargs "$@"
 }
 
 nofixups() {

@@ -129,10 +129,12 @@ job_parseflags() {
     case "$FLAG" in
       h|help)
         cat <<EOF
-usage: $0 [-x] jobregex
+usage: $0 [-xd] jobregex
 
 -x
   Equivalent to TRACE=1
+-d
+  Equivalent to DRY_RUN=1
 EOF
         return 1
         ;;
@@ -140,6 +142,10 @@ EOF
         flag_noarg && shift "$FLAGSHIFT"
         set -x
         export TRACE=1
+        ;;
+      d)
+        flag_noarg && shift "$FLAGSHIFT"
+        export DRY_RUN=1
         ;;
       *)
         flag_errusage "unrecognized flag $FLAGRAW"

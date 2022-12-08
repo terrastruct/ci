@@ -39,6 +39,11 @@ prettier() {
   sh_c hide xargsd "'\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'" npx prettier@2.8.1 --loglevel=warn --print-width=90 --write
 }
 
+trailing_whitespace() {
+  sh_c "<\"\$CHANGED_FILES\" xargs git grep -Il '' | xargs sed -i.sedbak 's/[[:space:]]*$//g'"
+  sh_c find . -name "'*.sedbak'" -delete
+}
+
 main() {
   job_parseflags "$@"
   ensure_changed_files
@@ -56,6 +61,9 @@ main() {
   fi
   if <"$CHANGED_FILES" grep -qm1 '\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'; then
     runjob prettier &
+  fi
+  if <"$CHANGED_FILES" xargs git grep -qIl ''; then
+    runjob trailing-whitespace trailing_whitespace &
   fi
   waitjobs
 }

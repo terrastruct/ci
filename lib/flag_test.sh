@@ -15,7 +15,7 @@ assert_term() {
 }
 
 case_term() {
-  set -- 
+  set --
   assert_term '' "$@"
 
   set -- --
