@@ -28,9 +28,10 @@ pandoc_toc() {
     VERSION=2.19.2
     ensure_arch
     export DEBIAN_FRONTEND=noninteractive
+    cd "$(mktemp -d)"
     sh_c curl -fssLO "https://github.com/jgm/pandoc/releases/download/$VERSION/pandoc-$VERSION-1-$ARCH.deb"
-    sh_c sudo dpkg -i "pandoc-$VERSION-1-$ARCH.deb" >&2
-    sh_c rm -f "pandoc-$VERSION-1-$ARCH.deb"
+    sh_c sudo dpkg -i "pandoc-$VERSION-1-$ARCH.deb"
+    cd - >/dev/null
   fi
   pandoc --wrap=none -s --toc --from gfm --to gfm | awk '/-/{f=1} {if (!NF) exit; print}'
 }
