@@ -37,9 +37,6 @@ testdiff_vars() {
   eval "_echo \"\$$1\"" > "$tmpdir/$1"
   eval "_echo \"\$$2\"" > "$tmpdir/$2"
   capcode testdiff "$tmpdir/$1" "$tmpdir/$2"
-  if [ $code -eq 0 ]; then
-    rm -r "$tmpdir"
-  fi
   return $code
 }
 

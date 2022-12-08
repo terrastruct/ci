@@ -34,7 +34,7 @@ runjob() {(
 
   # We need to make sure we return with a non zero code if the command fails.
   # /bin/sh does not support -o pipefail unfortunately.
-  job_tmpdir="$(TMPDIR= mktempd)"
+  job_tmpdir="$(mktempd)"
   stdout="$job_tmpdir/stdout"
   stderr="$job_tmpdir/stderr"
   mkfifo "$stdout"
@@ -42,9 +42,9 @@ runjob() {(
 
   # We add the prefix to all lines and remove any warning lines about recursive make.
   # We cannot silence these with -s which is unfortunate.
-  sed -e "s#^#$(echop "$jobname"): #" -e "/make\[.\]: warning: -j/d" "$stdout" &
+  (sed -e "s#^#$(echop "$jobname"): #" -e "/make\[.\]: warning: -j/d" "$stdout" || true) &
   # This intentionally does not output to our stderr, it becomes our stdout.
-  sed -e "s#^#$(echop "$jobname"): #" -e "/make\[.\]: warning: -j/d" "$stderr" &
+  (sed -e "s#^#$(echop "$jobname"): #" -e "/make\[.\]: warning: -j/d" "$stderr" || true) &
 
   start="$(awk 'BEGIN{srand(); print srand()}')"
   trap runjob_exittrap EXIT
@@ -94,7 +94,6 @@ runjob_exittrap() {
   else
     echop "$jobname\$" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
   fi
-  temp_exittrap
 }
 
 waitjobs() {

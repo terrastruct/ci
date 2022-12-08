@@ -421,7 +421,7 @@ runjob() {(
 
   # We need to make sure we return with a non zero code if the command fails.
   # /bin/sh does not support -o pipefail unfortunately.
-  job_tmpdir="$(TMPDIR= mktempd)"
+  job_tmpdir="$(mktempd)"
   stdout="$job_tmpdir/stdout"
   stderr="$job_tmpdir/stderr"
   mkfifo "$stdout"
@@ -429,9 +429,9 @@ runjob() {(
 
   # We add the prefix to all lines and remove any warning lines about recursive make.
   # We cannot silence these with -s which is unfortunate.
-  sed -e "s#^#$(echop "$jobname"): #" -e "/make\[.\]: warning: -j/d" "$stdout" &
+  (sed -e "s#^#$(echop "$jobname"): #" -e "/make\[.\]: warning: -j/d" "$stdout" || true) &
   # This intentionally does not output to our stderr, it becomes our stdout.
-  sed -e "s#^#$(echop "$jobname"): #" -e "/make\[.\]: warning: -j/d" "$stderr" &
+  (sed -e "s#^#$(echop "$jobname"): #" -e "/make\[.\]: warning: -j/d" "$stderr" || true) &
 
   start="$(awk 'BEGIN{srand(); print srand()}')"
   trap runjob_exittrap EXIT
@@ -481,7 +481,6 @@ runjob_exittrap() {
   else
     echop "$jobname\$" "$(setaf 1 failure)" "($(echo_dur "$dur"))"
   fi
-  temp_exittrap
 }
 
 waitjobs() {
@@ -1193,24 +1192,13 @@ if [ "${LIB_TEMP-}" ]; then
 fi
 LIB_TEMP=1
 
-ensure_tmpdir() {
-  if [ -n "${_TMPDIR-}" ]; then
-    return
-  fi
-
+if [ -z "${_TMPDIR-}" ]; then
   _TMPDIR=$(mktemp -d)
   export _TMPDIR
-  trap temp_exittrap EXIT
-}
-
-temp_exittrap() {
-  if [ -n "${_TMPDIR-}" ]; then
-    rm -r "$_TMPDIR"
-  fi
-}
+  trap 'rm -Rf "$_TMPDIR"' EXIT
+fi
 
 temppath() {
-  ensure_tmpdir
   while true; do
     temppath=$_TMPDIR/$(</dev/urandom od -N8 -tx -An -v | tr -d '[:space:]')
     if [ ! -e "$temppath" ]; then
@@ -1260,9 +1248,6 @@ testdiff_vars() {
   eval "_echo \"\$$1\"" > "$tmpdir/$1"
   eval "_echo \"\$$2\"" > "$tmpdir/$2"
   capcode testdiff "$tmpdir/$1" "$tmpdir/$2"
-  if [ $code -eq 0 ]; then
-    rm -r "$tmpdir"
-  fi
   return $code
 }
 
