@@ -10,6 +10,7 @@ git() {
 }
 
 case1() {
+  CI=
   tmpdir=$(mktempd)
   cd "$tmpdir"
   git init
@@ -33,6 +34,7 @@ EOF
 }
 
 case2() {
+  CI=
   libd=$(cd "$(dirname "$0")" && pwd)
 
   tmpdir=$(mktempd)
