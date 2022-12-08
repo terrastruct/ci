@@ -12,6 +12,7 @@ Currently used by:
 - https://github.com/terrastruct/text-to-diagram-site
 - https://github.com/terrastruct/byelinear
 - https://github.com/terrastruct/homebrew-tap
+- https://github.com/terrastruct/d2-obsidian
 
 And in our internal monorepo.
 
