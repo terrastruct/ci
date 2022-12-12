@@ -26,7 +26,10 @@ ensure_git_base() {
   fi
 
   if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
-    git fetch --unshallow
+    # Without --recurse-submodules, git fetch will sometimes throw errors like
+    # fatal: remote error: upload-pack: not our ref a1eddf1ed342a9d9fb1942c0d03bf375ba7f6496
+    # when fetching submodules.
+    git fetch --recurse-submodules=no --unshallow
   fi
 
   if [ "$(git_commit_count)" -lt 2 ]; then
