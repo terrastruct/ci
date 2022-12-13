@@ -47,7 +47,7 @@ trailing_whitespace() {
 main() {
   job_parseflags "$@"
   ensure_changed_files
-  if <"$CHANGED_FILES" hide xargs git grep -qIl ''; then
+  if <"$CHANGED_FILES" xargs git grep -qIl '' >/dev/null 2>&1; then
     runjob trailing-whitespace trailing_whitespace
   fi
   if <"$CHANGED_FILES" grep -qm1 '\.\(md\)$'; then
