@@ -170,7 +170,7 @@ ensure_git_base() {
     return
   fi
 
-  if [ -n "${CI_FORCE-}" ]; then
+  if [ -n "${CI_FORCE-}" ] || [ "$(git_commit_count)" -lt 1 ]; then
     export GIT_BASE=
     FGCOLOR=4 echop "GIT_BASE="
     return
@@ -196,8 +196,6 @@ ensure_git_base() {
     return
   fi
 
-  # Unfortunately --grep searches the whole commit message but we just want the header
-  # searched. Should fix by using grep directly later.
   GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD | head -n1)"
   if [ "$GIT_BASE" = "$(git rev-parse --short HEAD)" ]; then
     if [ -z "$(git status -s)" ]; then
@@ -320,7 +318,7 @@ xargsd() {
 
 nofixups() {
   ensure_git_base
-  if [ "$(git_commit_count)" -lt 2 ]; then
+  if [ "$(git_commit_count)" -lt 1 ]; then
     return
   fi
   commits="$(git log --grep='fixup!' --format=%h ${GIT_BASE:+"$GIT_BASE..HEAD"})"
