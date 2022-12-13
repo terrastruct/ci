@@ -47,6 +47,9 @@ trailing_whitespace() {
 main() {
   job_parseflags "$@"
   ensure_changed_files
+  if <"$CHANGED_FILES" hide xargs git grep -qIl ''; then
+    runjob trailing-whitespace trailing_whitespace
+  fi
   if <"$CHANGED_FILES" grep -qm1 '\.\(md\)$'; then
     runjob mdtocsubst mdtocsubst_xargsd &
   fi
@@ -61,9 +64,6 @@ main() {
   fi
   if <"$CHANGED_FILES" grep -qm1 '\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'; then
     runjob prettier &
-  fi
-  if <"$CHANGED_FILES" xargs git grep -qIl ''; then
-    runjob trailing-whitespace trailing_whitespace &
   fi
   waitjobs
 }
