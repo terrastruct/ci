@@ -48,7 +48,7 @@ two" 2>&1)
 }
 
 case4() {
-  got=$(COLOR=1 bigheader "one
+  got=$(COLOR=1 FGCOLOR=1 bigheader "one
 two" 2>&1)
   assert got "$(COLOR=1 tput setaf 1)/****************************************************************$(tput sgr0)
 $(COLOR=1 tput setaf 1) * one$(COLOR=1 tput sgr0)
