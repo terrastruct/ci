@@ -264,6 +264,7 @@ git_assert_clean() {
   if [ "$code" -ne 0 ]; then
     echoerr "some files need to be formatted or regenerated"
     cat "$diff" >&2
+    return "$code"
   fi
 }
 
