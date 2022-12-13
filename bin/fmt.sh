@@ -40,7 +40,7 @@ prettier() {
 }
 
 trailing_whitespace() {
-  sh_c "<\"\$CHANGED_FILES\" hide xargs git grep -Il '' | hide xargs sed -i.sedbak 's/[[:space:]]*$//g'"
+  sh_c "<\"\$CHANGED_FILES\" hide_stderr xargs git grep -Il '' | hide xargs sed -i.sedbak 's/[[:space:]]*$//g'"
   sh_c find . -name "'*.sedbak'" -delete
 }
 
