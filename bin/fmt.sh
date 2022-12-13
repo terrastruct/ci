@@ -40,29 +40,29 @@ prettier() {
 }
 
 trailing_whitespace() {
-  sh_c "<\"\$CHANGED_FILES\" hide_stderr xargs git grep -Il '' | hide xargs sed -i.sedbak 's/[[:space:]]*$//g'"
+  sh_c "<\"\$CHANGED_FILES\" grep -v '\.\(pdf\)$' | hide_stderr xargs git grep -Il '' | hide xargs sed -i.sedbak 's/[[:space:]]*$//g'"
   sh_c find . -name "'*.sedbak'" -delete
 }
 
 main() {
   job_parseflags "$@"
   ensure_changed_files
-  if <"$CHANGED_FILES" xargs git grep -qIl '' >/dev/null 2>&1; then
+  if <"$CHANGED_FILES" grep -v '\.\(pdf\)$' | xargs git grep -qIl '' >/dev/null 2>&1; then
     runjob trailing-whitespace trailing_whitespace
   fi
-  if <"$CHANGED_FILES" grep -qm1 '\.\(md\)$'; then
+  if <"$CHANGED_FILES" grep -q '\.\(md\)$'; then
     runjob mdtocsubst mdtocsubst_xargsd &
   fi
   if search_up go.mod >/dev/null; then
     runjob go.mod gomodtidy &
   fi
-  if <"$CHANGED_FILES" grep -qm1 '\.\(go\)$'; then
+  if <"$CHANGED_FILES" grep -q '\.\(go\)$'; then
     runjob gofmt &
   fi
   if search_up package.json > /dev/null; then
     runjob package.json pkgjson &
   fi
-  if <"$CHANGED_FILES" grep -qm1 '\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'; then
+  if <"$CHANGED_FILES" grep -q '\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'; then
     runjob prettier &
   fi
   waitjobs
