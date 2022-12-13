@@ -633,10 +633,14 @@ should_color() {
 }
 
 setaf() {
-  tput setaf "$1"
+  fg=$1
   shift
-  printf '%s' "$*"
-  tput sgr0
+  printf '%s\n' "$*" | while IFS= read -r line; do
+    tput setaf "$fg"
+    printf '%s' "$line"
+    tput sgr0
+    printf '\n'
+  done
 }
 
 _echo() {
@@ -1204,11 +1208,18 @@ if [ "${LIB_TEMP-}" ]; then
 fi
 LIB_TEMP=1
 
-if [ -z "${_TMPDIR-}" ]; then
+ensure_tmpdir() {
+  if [ -n "${_TMPDIR-}" ]; then
+    return
+  fi
   _TMPDIR=$(mktemp -d)
   export _TMPDIR
+}
+
+if [ -z "${_TMPDIR-}" ]; then
   trap 'rm -Rf "$_TMPDIR"' EXIT
 fi
+ensure_tmpdir
 
 temppath() {
   while true; do
@@ -1254,16 +1265,24 @@ assert_unset() {
   fi
 }
 
-testdiff_vars() {
+testdiff_vars() {(
+  _TMPDIR= && ensure_tmpdir
   tmpdir=$(mktempd)/testdiff_vars
   mkdir -p "$tmpdir"
   eval "_echo \"\$$1\"" > "$tmpdir/$1"
   eval "_echo \"\$$2\"" > "$tmpdir/$2"
   capcode testdiff "$tmpdir/$1" "$tmpdir/$2"
-  return $code
-}
+  if [ "$code" -eq 0 ]; then
+    rm -Rf "$_TMPDIR"
+  fi
+  return "$code"
+)}
 
 testdiff() {
+  if diff "$@" >/dev/null; then
+    return 0
+  fi
+
   should_color || true
   _f() {
     # 1. If _COLOR is set we want colors.
@@ -1282,4 +1301,5 @@ testdiff() {
   else
     _f "$@" | tail -n +3
   fi
+  return 1
 }

@@ -43,10 +43,14 @@ should_color() {
 }
 
 setaf() {
-  tput setaf "$1"
+  fg=$1
   shift
-  printf '%s' "$*"
-  tput sgr0
+  printf '%s\n' "$*" | while IFS= read -r line; do
+    tput setaf "$fg"
+    printf '%s' "$line"
+    tput sgr0
+    printf '\n'
+  done
 }
 
 _echo() {

@@ -31,16 +31,24 @@ assert_unset() {
   fi
 }
 
-testdiff_vars() {
+testdiff_vars() {(
+  _TMPDIR= && ensure_tmpdir
   tmpdir=$(mktempd)/testdiff_vars
   mkdir -p "$tmpdir"
   eval "_echo \"\$$1\"" > "$tmpdir/$1"
   eval "_echo \"\$$2\"" > "$tmpdir/$2"
   capcode testdiff "$tmpdir/$1" "$tmpdir/$2"
-  return $code
-}
+  if [ "$code" -eq 0 ]; then
+    rm -Rf "$_TMPDIR"
+  fi
+  return "$code"
+)}
 
 testdiff() {
+  if diff "$@" >/dev/null; then
+    return 0
+  fi
+
   should_color || true
   _f() {
     # 1. If _COLOR is set we want colors.
@@ -59,4 +67,5 @@ testdiff() {
   else
     _f "$@" | tail -n +3
   fi
+  return 1
 }

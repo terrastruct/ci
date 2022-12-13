@@ -47,8 +47,18 @@ two" 2>&1)
  ****************************************************************/"
 }
 
+case4() {
+  got=$(COLOR=1 bigheader "one
+two" 2>&1)
+  assert got "$(command tput setaf 1)/****************************************************************$(tput sgr0)
+$(command tput setaf 1) * one$(tput sgr0)
+$(command tput setaf 1) * two$(tput sgr0)
+$(command tput setaf 1) ****************************************************************/$(tput sgr0)"
+}
+
 job_parseflags "$@"
 runjob case1 &
 runjob case2 &
 runjob case3 &
+runjob case4 &
 waitjobs

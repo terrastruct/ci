@@ -4,11 +4,18 @@ if [ "${LIB_TEMP-}" ]; then
 fi
 LIB_TEMP=1
 
-if [ -z "${_TMPDIR-}" ]; then
+ensure_tmpdir() {
+  if [ -n "${_TMPDIR-}" ]; then
+    return
+  fi
   _TMPDIR=$(mktemp -d)
   export _TMPDIR
+}
+
+if [ -z "${_TMPDIR-}" ]; then
   trap 'rm -Rf "$_TMPDIR"' EXIT
 fi
+ensure_tmpdir
 
 temppath() {
   while true; do
