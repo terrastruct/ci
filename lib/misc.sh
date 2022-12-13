@@ -7,11 +7,6 @@ LIB_MISC=1
 . ./flag.sh
 . ./release.sh
 
-aws() {
-  # Without the redirection aws's cli will write directly to /dev/tty bypassing prefix.
-  command aws "$@" > /dev/stdout
-}
-
 docker_run() {
   sh_c docker run --rm \
     -v "$HOME:$HOME" \
