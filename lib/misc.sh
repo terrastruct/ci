@@ -42,7 +42,7 @@ mdtocsubst() {
     case "$FLAG" in
       h|help)
         mdtocsubst_help
-        return 0
+        return 1
         ;;
       skip)
         flag_nonemptyarg && shift "$FLAGSHIFT"

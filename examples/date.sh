@@ -66,13 +66,13 @@ main() {
         ;;
       format)
         flag_nonemptyarg && shift "$FLAGSHIFT"
-        DATE_FORMAT="$FLAGARG"
+        DATE_FORMAT=$FLAGARG
         ;;
       o|output)
         shift "$FLAGSHIFT"
-        OUTPUT="${FLAGARG:-date-out.txt}"
+        OUTPUT=${FLAGARG:-date-out.txt}
         if [ "$OUTPUT" != - ]; then
-          exec >"$OUTPUT"
+          exec >$OUTPUT
         fi
         ;;
       *)
