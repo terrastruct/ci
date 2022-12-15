@@ -53,7 +53,7 @@ runjob() {(
   ( eval "$*" >"$stdout" 2>"$stderr" )
 )}
 
-runjob_filter() {
+_runjob_filter() {
   if [ -z "${JOBFILTER-}" ]; then
     return 0
   fi
@@ -81,6 +81,13 @@ runjob_filter() {
     fi
   done
   return 0
+}
+
+runjob_filter() {
+  if ! _runjob_filter; then
+    return
+  fi
+  eval "$*"
 }
 
 runjob_exittrap() {
