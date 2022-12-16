@@ -84,3 +84,7 @@ mdtocsubst() {
     shift
   done
 }
+
+ssh_accept_new() {
+  command ssh -o='StrictHostKeyChecking=accept-new' "$@"
+}
