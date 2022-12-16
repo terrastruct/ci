@@ -987,10 +987,6 @@ mdtocsubst() {
     shift
   done
 }
-
-ssh_accept_new() {
-  command ssh -o='StrictHostKeyChecking=accept-new' "$@"
-}
 #!/bin/sh
 if [ "${LIB_NOTIFY-}" ]; then
   return 0
