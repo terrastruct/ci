@@ -23,7 +23,7 @@ runjob() {(
     set "$jobname"
   fi
 
-  if ! runjob_filter; then
+  if ! _runjob_filter; then
     return 0
   fi
 
