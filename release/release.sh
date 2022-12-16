@@ -345,6 +345,7 @@ _8_ensure_assets() {
     warn "skipping building of assets due to --skip-build"
     return 0
   fi
+  export RELEASE=1
   sh_c ./ci/release/build.sh ${REBUILD:+--rebuild} --version="$VERSION"
 }
 
