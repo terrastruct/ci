@@ -206,5 +206,7 @@ lockfile_ssh() {
 }
 
 unlockfile_ssh() {
-  ssh "$LOCKHOST" rm -f "$LOCKFILE_PID" "$LOCKFILE"
+  ssh "$LOCKHOST" sh -s -- <<EOF
+rm -f '"$LOCKFILE_PID"' '"$LOCKFILE"'
+EOF
 }
