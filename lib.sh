@@ -987,16 +987,16 @@ mdtocsubst() {
 
     TOC=$(<$1 pandoc_toc)
     if [ "$SKIP" -gt 0 ]; then
-      TOC=$(echo "$TOC" | sed -E -e "/^ {0,$(((SKIP-1)*2))}-/d" -e "s/^ {0,$((SKIP*2))}//")
+      TOC=$(_echo "$TOC" | sed -E -e "/^ {0,$(((SKIP-1)*2))}-/d" -e "s/^ {0,$((SKIP*2))}//")
     fi
     BEFORE_TOC=$(<$1 head -n"$((TOC_START))")
     AFTER_TOC=$(<$1 tail +"$((TOC_START+1))")
-    TOC_END=$(echo "$AFTER_TOC" | grep -nm 1 '^$' | cut -d: -f1 | head -n1)
+    TOC_END=$(_echo "$AFTER_TOC" | grep -nm 1 '^$' | cut -d: -f1 | head -n1)
     TOC_END=$((TOC_START+TOC_END))
     AFTER_TOC=$(<$1 tail +"$TOC_END")
-    echo "$BEFORE_TOC" >$1
-    echo "$TOC" >>$1
-    echo "$AFTER_TOC" >>$1
+    _echo "$BEFORE_TOC" >$1
+    _echo "$TOC" >>$1
+    _echo "$AFTER_TOC" >>$1
     shift
   done
 }
