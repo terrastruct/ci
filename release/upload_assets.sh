@@ -42,7 +42,7 @@ main() {
     return 1
   fi
 
-  sh_c gh release upload "${REPO+"-R \"$REPO\""}" --clobber "$VERSION" "./ci/release/build/$VERSION"/*.tar.gz
+  sh_c gh release upload "${REPO+"-R \"$REPO\""}" --clobber "$VERSION" $(find -L "./ci/release/build/$VERSION" -type f -maxdepth 1)
 }
 
 main "$@"
