@@ -364,15 +364,24 @@ gitsync() {(
   REMOTE_HOST=$1
   to=$2
 
-  sh_c ssh "$REMOTE_HOST" "'mkdir -p \"$to\"'"
-  sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git init'"
+  ssh "$REMOTE_HOST" sh <<EOF
+set -eu
+mkdir -p "$to"
+cd "$to"
+git init
+EOF
   sh_c git push -f "$REMOTE_HOST:$to" HEAD:_gitsync
-  sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git checkout -qf \"$(git rev-parse --short HEAD)\"'"
-  sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git add --all'"
-  sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git reset --hard HEAD'"
-  sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git reset'"
-  sh_c ssh "$REMOTE_HOST" "'cd \"$to\" && git submodule update --init'"
-
+  ssh "$REMOTE_HOST" sh <<EOF
+set -eu
+mkdir -p "$to"
+cd "$to"
+git init
+git checkout -qf "$(git rev-parse --short HEAD)"
+git add --all
+git reset --hard HEAD
+git reset
+git submodule update --init
+EOF
   localfiles="$(mktempd)/local_files"
   sh_c git ls-files --exclude-standard --cached --other >"$localfiles"
   sh_c rsync --archive --human-readable --delete --delete-missing-args \
@@ -584,7 +593,9 @@ lockfile_ssh() {
   if [ -n "${LOCKFILE_FORCE-}" ]; then
     unlockfile_ssh
   fi
-  ssh "$LOCKHOST" echo "ssh $USER@$(hostname)" \> "$LOCKFILE_PID"
+  ssh "$LOCKHOST" sh <<EOF
+echo "ssh $USER@$(hostname)" > "$LOCKFILE_PID"
+EOF
   capcode ssh "$LOCKHOST" ln "$LOCKFILE_PID" "$LOCKFILE"
   if [ $code -ne 0 ]; then
     echoerr "$LOCKFILE locked by $(ssh "$LOCKHOST" cat "$LOCKFILE")"
@@ -596,7 +607,7 @@ lockfile_ssh() {
 
 unlockfile_ssh() {
   ssh "$LOCKHOST" sh -s -- <<EOF
-rm -f '"$LOCKFILE_PID"' '"$LOCKFILE"'
+rm -f "$LOCKFILE_PID" "$LOCKFILE"
 EOF
 }
 #!/bin/sh

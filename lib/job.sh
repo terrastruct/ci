@@ -195,7 +195,9 @@ lockfile_ssh() {
   if [ -n "${LOCKFILE_FORCE-}" ]; then
     unlockfile_ssh
   fi
-  ssh "$LOCKHOST" echo "ssh $USER@$(hostname)" \> "$LOCKFILE_PID"
+  ssh "$LOCKHOST" sh <<EOF
+echo "ssh $USER@$(hostname)" > "$LOCKFILE_PID"
+EOF
   capcode ssh "$LOCKHOST" ln "$LOCKFILE_PID" "$LOCKFILE"
   if [ $code -ne 0 ]; then
     echoerr "$LOCKFILE locked by $(ssh "$LOCKHOST" cat "$LOCKFILE")"
@@ -207,6 +209,6 @@ lockfile_ssh() {
 
 unlockfile_ssh() {
   ssh "$LOCKHOST" sh -s -- <<EOF
-rm -f '"$LOCKFILE_PID"' '"$LOCKFILE"'
+rm -f "$LOCKFILE_PID" "$LOCKFILE"
 EOF
 }
