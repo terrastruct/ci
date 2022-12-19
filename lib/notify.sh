@@ -11,6 +11,11 @@ notify() {
     return
   fi
 
+  if [ "$GITHUB_REF_PROTECTED" != true ]; then
+    # We only want to notify on protected branch failures.
+    return
+  fi
+
   if [ -z "${GITHUB_RUN_ID-}" ]; then
     # For testing.
     GITHUB_WORKFLOW=ci
@@ -18,9 +23,6 @@ notify() {
     GITHUB_REPOSITORY=terrastruct/src
     GITHUB_RUN_ID=3086720699
     GITHUB_JOB=all
-  elif [ "$GITHUB_REF_PROTECTED" != true ]; then
-    # We only want to notify on protected branch failures.
-    return
   fi
 
   if [ -z "${SLACK_WEBHOOK_URL-}" -a -z "${DISCORD_WEBHOOK_URL-}" ]; then

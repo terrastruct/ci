@@ -6,11 +6,15 @@ cd ./lib
 . ./ci.sh
 cd - >/dev/null
 
+fmtgen() {
+  runjob fmt ./bin/fmt.sh
+  runjob gen ./ci/gen.sh
+}
+
 job_parseflags "$@"
 ensure_git_base
 if is_changed lib; then
-  runjob fmt ./bin/fmt.sh &
-  runjob gen ./ci/gen.sh &
+  fmtgen &
   runjob test ./ci/test.sh &
 fi
 ci_waitjobs
