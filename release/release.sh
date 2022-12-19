@@ -197,7 +197,7 @@ _1_ensure_branch() {
 }
 
 _1_ensure_branch_repodir() {
-  if [ "$REPO_DIR" == . ]; then
+  if [ "$REPO_DIR" = . ]; then
     return 0
   fi
   if [ -z "$(git -C "$REPO_DIR" branch --list "$VERSION")" ]; then
@@ -230,7 +230,7 @@ _2_ensure_changelog() {
 }
 
 _2_ensure_changelogs_repodir() {
-  if [ "$REPO_DIR" == . ]; then
+  if [ "$REPO_DIR" = . ]; then
     return 0
   fi
   sh_c mkdir -p "$REPO_DIR/ci/release/changelogs"
@@ -248,7 +248,7 @@ _3_ensure_commit() {
 }
 
 _3_ensure_commit_repodir() {
-  if [ "$REPO_DIR" == . ]; then
+  if [ "$REPO_DIR" = . ]; then
     return 0
   fi
   sh_c git -C "$REPO_DIR" add --all
@@ -265,7 +265,7 @@ _4_push_branch() {
 }
 
 _4_push_branch_repodir() {
-  if [ "$REPO_DIR" == . ]; then
+  if [ "$REPO_DIR" = . ]; then
     return 0
   fi
   sh_c git -C "$REPO_DIR" push -f origin "refs/heads/$VERSION"
@@ -317,7 +317,7 @@ _7_ensure_pr() {
 }
 
 _7_ensure_pr_repodir() {
-  if [ "$REPO_DIR" == . ]; then
+  if [ "$REPO_DIR" = . ]; then
     return 0
   fi
 
