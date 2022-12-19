@@ -1263,6 +1263,11 @@ ssh_copy_id() {
   sh_c ssh "$REMOTE_HOST" 'cp .ssh/authorized_keys.dedup .ssh/authorized_keys'
   sh_c ssh "$REMOTE_HOST" 'rm .ssh/authorized_keys.dedup'
 }
+
+ssh() {
+  # Always accept new SSH host keys automatically.
+  command ssh -o='StrictHostKeyChecking=accept-new' "$@"
+}
 #!/bin/sh
 if [ "${LIB_TEMP-}" ]; then
   return 0
