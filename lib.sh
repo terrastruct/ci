@@ -225,19 +225,21 @@ is_changed() {
 
 ensure_changed_files() {
   ensure_git_base
-  cd "$(git rev-parse --show-toplevel)"
 
   if [ -n "${CHANGED_FILES-}" ]; then
     return
   fi
 
   CHANGED_FILES=$(mktempd)/changed-files
-  git ls-files --other --exclude-standard > "$CHANGED_FILES"
-  if [ -n "${GIT_BASE-}" ]; then
-    git diff --relative --name-only "$GIT_BASE" | filter_exists >> "$CHANGED_FILES"
-  else
-    git ls-files >> "$CHANGED_FILES"
-  fi
+  (
+    cd "$(git rev-parse --show-toplevel)"
+    git ls-files --other --exclude-standard > "$CHANGED_FILES"
+    if [ -n "${GIT_BASE-}" ]; then
+      git diff --relative --name-only "$GIT_BASE" | filter_exists >> "$CHANGED_FILES"
+    else
+      git ls-files >> "$CHANGED_FILES"
+    fi
+  )
   export CHANGED_FILES
   if [ -z "${CI_FORCE-}" ]; then
     logpcat changed <"$CHANGED_FILES"
