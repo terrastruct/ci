@@ -50,6 +50,7 @@ EOF
   GITHUB_JOB_URL=$(curl -fsSL -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs?per_page=100" | \
     jq -r ".jobs[] | select( .name == \"$GITHUB_JOB\") | .html_url")
   if [ -z "$GITHUB_JOB_URL" ]; then
+    code=1
     status="failed to query github job URL <!here>"
     emoji=🛑
     GITHUB_JOB_URL="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

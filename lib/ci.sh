@@ -30,5 +30,5 @@ ci_waitjobs() {
   fi
   capcode nofixups
   notify
-  return 0
+  return "$code"
 }

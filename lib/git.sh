@@ -38,10 +38,10 @@ ensure_git_base() {
     return
   fi
 
-  GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD | head -n1)"
+  GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-force\]" --format=%h HEAD | head -n1)"
   if [ "$GIT_BASE" = "$(git rev-parse --short HEAD)" ]; then
     if [ -z "$(git status -s)" ]; then
-      GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-base\]" --format=%h HEAD~1 | head -n1)"
+      GIT_BASE="$(git log --grep="Merge pull request" --grep="\[ci-force\]" --format=%h HEAD~1 | head -n1)"
     else
       GIT_BASE=HEAD
     fi
