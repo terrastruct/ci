@@ -50,7 +50,7 @@ trailing_whitespace() {
 
 d2fmt() {
   cd "$(git rev-parse --show-toplevel)"
-  if ! command -v d2 /dev/null && [ -n "${CI-}" ]; then
+  if ! command -v d2 >/dev/null && [ -n "${CI-}" ]; then
     curl -fsSL https://d2lang.com/install.sh | sh -s --
   fi
   sh_c XARGS_N=1 hide xargsd "'\.\(d2\)$'" d2 fmt
@@ -71,7 +71,7 @@ main() {
   if <"$CHANGED_FILES" grep -q '\.\(go\)$'; then
     runjob gofmt &
   fi
-  if search_up package.json > /dev/null; then
+  if search_up package.json >/dev/null; then
     runjob package.json pkgjson &
   fi
   if <"$CHANGED_FILES" grep -q '\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'; then
