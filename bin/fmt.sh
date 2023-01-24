@@ -48,11 +48,11 @@ trailing_whitespace() {
   sh_c find . -name "'*.sedbak'" -delete
 }
 
-d2() {
+d2fmt() {
   if ! command -v d2 /dev/null && [ -n "${CI-}" ]; then
     curl -fsSL https://d2lang.com/install.sh | sh -s --
   fi
-  sh_c hide XARGS_N=1 xargsd "'\.\(d2\)$'" d2
+  sh_c hide XARGS_N=1 xargsd "'\.\(d2\)$'" d2 fmt
 }
 
 main() {
@@ -77,7 +77,7 @@ main() {
     runjob prettier &
   fi
   if <"$CHANGED_FILES" grep -qm1 '\.\(d2\)$'; then
-    runjob d2 &
+    runjob d2fmt &
   fi
   waitjobs
 }
