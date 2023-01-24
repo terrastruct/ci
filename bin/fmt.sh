@@ -49,6 +49,7 @@ trailing_whitespace() {
 }
 
 d2fmt() {
+  cd "$(git rev-parse --show-toplevel)"
   if ! command -v d2 /dev/null && [ -n "${CI-}" ]; then
     curl -fsSL https://d2lang.com/install.sh | sh -s --
   fi
