@@ -15,6 +15,7 @@ Currently used by:
 - https://github.com/terrastruct/byelinear
 - https://github.com/terrastruct/homebrew-tap
 - https://github.com/terrastruct/d2-obsidian
+- https://github.com/terrastruct/d2-playground
 
 And in our internal monorepo.
 
