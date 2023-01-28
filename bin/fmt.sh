@@ -44,7 +44,7 @@ prettier() {
 
 trailing_whitespace() {
   cd "$(git rev-parse --show-toplevel)"
-  sh_c "<\"\$CHANGED_FILES\" grep -v '\.\(pdf\)$' | hide_stderr xargs git grep -Il '' | hide xargs sed -i.sedbak 's/[[:space:]]*$//g'"
+  sh_c "<\"\$CHANGED_FILES\" grep -v '\.\(pdf\)$' | xargs git grep -Il '' 2>/dev/null | hide xargs sed -i.sedbak 's/[[:space:]]*$//g'"
   sh_c find . -name "'*.sedbak'" -delete
 }
 
@@ -59,7 +59,7 @@ d2fmt() {
 main() {
   job_parseflags "$@"
   ensure_changed_files
-  if <"$CHANGED_FILES" grep -v '\.\(pdf\)$' | xargs git grep -qIl '' >/dev/null 2>&1; then
+  if [ -n "$(<"$CHANGED_FILES" grep -v '\.\(pdf\)$' | xargs git grep -Il '' 2>/dev/null | head -n1)" ]; then
     runjob trailing-whitespace trailing_whitespace
   fi
   if <"$CHANGED_FILES" grep -q '\.\(md\)$'; then
