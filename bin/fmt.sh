@@ -51,7 +51,14 @@ trailing_whitespace() {
 d2fmt() {
   cd "$(git rev-parse --show-toplevel)"
   if ! command -v d2 >/dev/null && [ -n "${CI-}" ]; then
-    curl -fsSL https://d2lang.com/install.sh | sh -s --
+    (
+      # GITHUB_TOKEN must be unset otherwise sometimes the github api will
+      # return a 401 fetching the release assets. Not 100% sure why.
+      # See https://github.com/terrastruct/d2/commit/335d925b7c937d4e7cac7e26de993f60840eb116#commitcomment-98101131
+      # Happens on both forks and in origin.
+      GITHUB_TOKEN=
+      curl -fsSL https://d2lang.com/install.sh | sh -s --
+    )
   fi
   sh_c XARGS_N=1 hide xargsd "'\.\(d2\)$'" d2 fmt
 }
