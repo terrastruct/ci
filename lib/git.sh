@@ -74,7 +74,6 @@ ensure_changed_files() {
 
   CHANGED_FILES=$(mktempd)/changed-files
   (
-    cd "$(git rev-parse --show-toplevel)"
     git ls-files --other --exclude-standard > "$CHANGED_FILES"
     if [ -n "${GIT_BASE-}" ]; then
       git diff --relative --name-only "$GIT_BASE" | filter_exists >> "$CHANGED_FILES"
@@ -82,7 +81,6 @@ ensure_changed_files() {
       git ls-files >> "$CHANGED_FILES"
     fi
   )
-  export CHANGED_FILES
   if [ -z "${CI_FORCE-}" ]; then
     logpcat changed <"$CHANGED_FILES"
   fi

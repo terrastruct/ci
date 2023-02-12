@@ -10,7 +10,6 @@ cd - >/dev/null
 PATH="$(cd -- "$(dirname "$0")" && pwd)/../bin:$PATH"
 
 mdtocsubst_xargsd() {
-  cd "$(git rev-parse --show-toplevel)"
   sh_c hide xargsd "'\\.md$'" mdtocsubst
 }
 
@@ -19,7 +18,6 @@ gomodtidy() {
 }
 
 gofmt() {
-  cd "$(git rev-parse --show-toplevel)"
   sh_c hide xargsd "'\.go$'" gofmt -s -w
   if search_up go.mod >/dev/null; then
     modname=$(go list -m)
@@ -38,18 +36,15 @@ pkgjson() {
 }
 
 prettier() {
-  cd "$(git rev-parse --show-toplevel)"
   sh_c hide xargsd "'\.\(js\|jsx\|ts\|tsx\|scss\|css\|html\)$'" npx prettier@2.8.1 --loglevel=warn --print-width=90 --write
 }
 
 trailing_whitespace() {
-  cd "$(git rev-parse --show-toplevel)"
   sh_c "<\"\$CHANGED_FILES\" grep -v '\.\(pdf\)$' | xargs git grep -Il '' 2>/dev/null | hide xargs sed -i.sedbak 's/[[:space:]]*$//g'"
   sh_c find . -name "'*.sedbak'" -delete
 }
 
 d2fmt() {
-  cd "$(git rev-parse --show-toplevel)"
   if ! command -v d2 >/dev/null && [ -n "${CI-}" ]; then
     (
       # GITHUB_TOKEN must be unset otherwise sometimes the github api will
