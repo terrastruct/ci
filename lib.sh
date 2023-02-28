@@ -936,7 +936,7 @@ docker_run() {
 
 pandoc_toc() {
   if [ -n "${CI-}" ] && ! command -v pandoc >/dev/null; then
-    VERSION=2.19.2
+    VERSION=3.1
     ensure_arch
     export DEBIAN_FRONTEND=noninteractive
     cd "$(mktemp -d)"
