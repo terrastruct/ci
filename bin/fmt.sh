@@ -61,9 +61,10 @@ d2fmt() {
 main() {
   job_parseflags "$@"
   ensure_changed_files
-  if [ -n "$(<"$CHANGED_FILES" grep -v '\.\(pdf\)$' | xargs git grep -Il '' 2>/dev/null | head -n1)" ]; then
-    runjob trailing-whitespace trailing_whitespace
-  fi
+  # trailing_whitespace causes random problems.
+  # if [ -n "$(<"$CHANGED_FILES" grep -v '\.\(pdf\)$' | xargs git grep -Il '' 2>/dev/null | head -n1)" ]; then
+  #   runjob trailing-whitespace trailing_whitespace
+  # fi
   if <"$CHANGED_FILES" grep -q '\.\(md\)$'; then
     runjob mdtocsubst mdtocsubst_xargsd &
   fi
