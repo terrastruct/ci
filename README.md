@@ -16,6 +16,7 @@ Currently used by:
 - https://github.com/terrastruct/homebrew-tap
 - https://github.com/terrastruct/d2-obsidian
 - https://github.com/terrastruct/d2-playground
+- https://github.com/terrastruct/d2-vscode
 
 And in our internal monorepo.
 
