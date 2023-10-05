@@ -163,11 +163,24 @@ nofixups() {
   if [ "$(git_commit_count)" -lt 1 ]; then
     return
   fi
+  if [ ! "$(ensure_signed)" ]; then
+    return 1
+  fi
   commits="$(git log --grep='fixup!' --format=%h ${GIT_BASE:+"$GIT_BASE..HEAD"})"
   if [ -n "$commits" ]; then
     echo "$commits" | FGCOLOR=1 logpcat 'fixup detected'
     return 1
   fi
+}
+
+ensure_signed() {
+  # look for signature status N: no signature
+  if [ ! "$(git log --format="%G?" ${GIT_BASE:+"$GIT_BASE..HEAD"} | grep "N")" ]; then
+    return
+  fi
+  # print the hash and summary of the unsigned commits
+  echo "$(git log --format="%G? %h %s" ${GIT_BASE:+"$GIT_BASE..HEAD"} | grep "^N " | cut -d " " -f 2- )" | FGCOLOR=1 logpcat 'found unsigned commit'
+  return 1
 }
 
 git_commit_count() {
