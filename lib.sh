@@ -321,11 +321,27 @@ nofixups() {
   if [ "$(git_commit_count)" -lt 1 ]; then
     return
   fi
+
+  if [ -n "${CHECK_SIGS-}" ]; then
+    if [ ! "$(ensure_signed)" ]; then
+      return 1
+    fi
+  fi
   commits="$(git log --grep='fixup!' --format=%h ${GIT_BASE:+"$GIT_BASE..HEAD"})"
   if [ -n "$commits" ]; then
     echo "$commits" | FGCOLOR=1 logpcat 'fixup detected'
     return 1
   fi
+}
+
+ensure_signed() {
+  # look for signature status N: no signature
+  if [ ! "$(git log --format="%G?" ${GIT_BASE:+"$GIT_BASE..HEAD"} | grep "N")" ]; then
+    return
+  fi
+  # print the hash and summary of the unsigned commits
+  echo "$(git log --format="%G? %h %s" ${GIT_BASE:+"$GIT_BASE..HEAD"} | grep "^N " | cut -d " " -f 2- )" | FGCOLOR=1 logpcat 'found unsigned commit'
+  return 1
 }
 
 git_commit_count() {
@@ -935,15 +951,6 @@ docker_run() {
 }
 
 pandoc_toc() {
-  if [ -n "${CI-}" ] && ! command -v pandoc >/dev/null; then
-    VERSION=3.1
-    ensure_arch
-    export DEBIAN_FRONTEND=noninteractive
-    cd "$(mktemp -d)"
-    sh_c curl -fssLO "https://github.com/jgm/pandoc/releases/download/$VERSION/pandoc-$VERSION-1-$ARCH.deb"
-    sh_c sudo dpkg -i "pandoc-$VERSION-1-$ARCH.deb" >&2
-    cd - >/dev/null
-  fi
   pandoc --wrap=none -s --toc --from gfm --to gfm | awk '/-/{f=1} {if (!NF) exit; print}'
 }
 
@@ -983,6 +990,21 @@ mdtocsubst() {
     if [ -z "$TOC_START" ]; then
       shift
       continue
+    fi
+
+    if ! command -v pandoc >/dev/null; then
+      if [ -n "${CI-}" ]; then
+        VERSION=3.1
+        ensure_arch
+        export DEBIAN_FRONTEND=noninteractive
+        cd "$(mktemp -d)"
+        sh_c curl -fssLO "https://github.com/jgm/pandoc/releases/download/$VERSION/pandoc-$VERSION-1-$ARCH.deb"
+        sh_c sudo dpkg -i "pandoc-$VERSION-1-$ARCH.deb" >&2
+        cd - >/dev/null
+      else
+        echoerr "pandoc must be installed"
+		return 1
+      fi
     fi
 
     TOC=$(<$1 pandoc_toc)
