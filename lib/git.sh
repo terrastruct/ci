@@ -163,8 +163,11 @@ nofixups() {
   if [ "$(git_commit_count)" -lt 1 ]; then
     return
   fi
-  if [ ! "$(ensure_signed)" ]; then
-    return 1
+
+  if [ -n "${CHECK_SIGS-}" ]; then
+    if [ ! "$(ensure_signed)" ]; then
+      return 1
+    fi
   fi
   commits="$(git log --grep='fixup!' --format=%h ${GIT_BASE:+"$GIT_BASE..HEAD"})"
   if [ -n "$commits" ]; then
