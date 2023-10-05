@@ -164,11 +164,6 @@ nofixups() {
     return
   fi
 
-  if [ -n "${CHECK_SIGS-}" ]; then
-    if [ ! "$(ensure_signed)" ]; then
-      return 1
-    fi
-  fi
   commits="$(git log --grep='fixup!' --format=%h ${GIT_BASE:+"$GIT_BASE..HEAD"})"
   if [ -n "$commits" ]; then
     echo "$commits" | FGCOLOR=1 logpcat 'fixup detected'
@@ -177,6 +172,11 @@ nofixups() {
 }
 
 ensure_signed() {
+  ensure_git_base
+  if [ "$(git_commit_count)" -lt 1 ]; then
+    return
+  fi
+
   # look for signature status N: no signature
   if [ ! "$(git log --format="%G?" ${GIT_BASE:+"$GIT_BASE..HEAD"} | grep "N")" ]; then
     return
