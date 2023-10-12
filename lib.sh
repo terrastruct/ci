@@ -335,13 +335,25 @@ ensure_signed() {
     return
   fi
 
-  # look for signature status N: no signature
+  setup_allowed_signers
+  # look for signature status N: no signature (verification done by github)
   if [ ! "$(git log --format="%G?" ${GIT_BASE:+"$GIT_BASE..HEAD"} | grep "N")" ]; then
     return
   fi
   # print the hash and summary of the unsigned commits
   echo "$(git log --format="%G? %h %s" ${GIT_BASE:+"$GIT_BASE..HEAD"} | grep "^N " | cut -d " " -f 2- )" | FGCOLOR=1 logpcat 'found unsigned commit'
   return 1
+}
+
+setup_allowed_signers() {
+  # we only care if a signature is present (github will verify) so we don't need any entries,
+  # but "gpg.ssh.allowedSignersFile needs to be configured and exist for ssh signature verification"
+  if git config --get gpg.ssh.allowedSignersFile >/dev/null; then
+    return
+  fi
+  allowed_signers=".emptyAllowedSigners"
+  touch $allowed_signers
+  git config --local gpg.ssh.allowedSignersFile "$allowed_signers"
 }
 
 git_commit_count() {
