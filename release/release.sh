@@ -312,7 +312,7 @@ _7_ensure_pr() {
   fi
 
   ensure_github_user
-  pr_url="$(sh_c gh pr create --fill --body "'$body'" --head="$GITHUB_USER:$SRC_PREFIX$VERSION" | tee /dev/stderr)"
+  pr_url="$(sh_c gh pr create --fill --body "'$body'" --head="$VERSION" | tee /dev/stderr)"
   _7_ensure_pr_repodir
 }
 
