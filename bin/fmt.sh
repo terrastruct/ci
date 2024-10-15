@@ -55,7 +55,7 @@ d2fmt() {
       curl -fsSL https://d2lang.com/install.sh | sh -s --
     )
   fi
-  sh_c XARGS_N=1 hide xargsd "'\.\(d2\)$'" d2 fmt
+  sh_c XARGS_N=1 hide xargsd --null "'\.\(d2\)$'" d2 fmt
 }
 
 main() {
